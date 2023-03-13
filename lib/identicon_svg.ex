@@ -12,7 +12,7 @@ defmodule IdenticonSvg do
   Documentation for `IdenticonSvg`.
   """
 
-  def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0) do
+  def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0) when size in 4..10 do
     %Identicon{text: text, size: size, bg_color: bg_color, opacity: opacity}
     |> hash_input()
     |> extract_color()
