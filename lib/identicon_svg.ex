@@ -2,7 +2,7 @@ defmodule Identicon do
   @moduledoc """
   Documentation for `Identicon`.
   """
-  defstruct text: nil, rgb: nil, grid: nil, svg: nil, opacity: 1.0
+  defstruct text: nil, size: 5, rgb: nil, grid: nil, svg: nil, bg_color: nil, opacity: 1.0
 end
 
 defmodule IdenticonSvg do
@@ -12,8 +12,8 @@ defmodule IdenticonSvg do
   Documentation for `IdenticonSvg`.
   """
 
-  def generate(text) do
-    %Identicon{text: text}
+  def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0) do
+    %Identicon{text: text, size: size, bg_color: bg_color, opacity: opacity}
     |> hash_input()
     |> extract_color()
     |> square_grid()
@@ -23,9 +23,24 @@ defmodule IdenticonSvg do
     |> output_svg()
   end
 
-  def hash_input(%Identicon{text: text} = input) do
+  def appropriate_hash(size) when size in 4..10 do
+    hashes = %{
+      4 => :md5,
+      5 => :md5,
+      6 => :ripemd160,
+      7 => :sha3_224,
+      8 => :sha3_256,
+      9 => :sha3_384,
+      10 => :sha3_512,
+    }
+
+    hashes[size]
+  end
+
+  def hash_input(%Identicon{text: text, size: size} = input) do
     grid =
-      :crypto.hash(:md5, text)
+      appropriate_hash(size)
+      |> :crypto.hash(text)
       |> :binary.bin_to_list()
 
     %{input | grid: grid}
@@ -48,20 +63,26 @@ defmodule IdenticonSvg do
     |> String.pad_leading(2, "0")
   end
 
-  def square_grid(%Identicon{grid: grid} = input) do
+  def square_grid(%Identicon{grid: grid, size: size} = input) do
+    odd = rem(size, 2)
+    chunks = Integer.floor_div(size, 2) + odd
     grid =
       grid
-      |> Enum.chunk_every(3)
-      |> Enum.filter(fn x -> length(x) == 3 end)
-      |> Enum.map(&mirror_row/1)
+      |> Enum.chunk_every(chunks)
+      |> Enum.slice(0, size)
+      |> Enum.map(&mirror_row(&1, odd))
       |> List.flatten()
 
     %{input | grid: grid}
   end
 
-  def mirror_row(row) do
-    [a, b, _] = row
-    row ++ [b, a]
+  def mirror_row(row, odd \\ 1) when odd in 0..1 do
+    mirror =
+      row
+      |> Enum.slice(0, length(row) - odd)
+      |> Enum.reverse()
+
+    row ++ mirror
   end
 
   def mark_present_squares(%Identicon{grid: grid} = input) do
@@ -81,51 +102,61 @@ defmodule IdenticonSvg do
   end
 
   def color_all_squares(
-        %Identicon{rgb: rgb, grid: grid, opacity: opacity} = input
+        %Identicon{rgb: rgb, grid: grid, opacity: opacity, size: size, bg_color: bg_color} = input
       ) do
     svg =
       grid
-      |> Enum.map(&square_to_rect(&1, rgb, "#fff", opacity))
+      |> Enum.map(&square_to_rect(&1, rgb, bg_color, opacity, size))
 
     %{input | svg: svg}
   end
 
   @doc """
   Generate an SVG rectangle from the `lib/rect.xml.eex` template and the parameters
-  for the foreground color, the overall opacity, and the rectangle's coordinates.  """
-  EEx.function_from_file(
+  for the foreground color, the overall opacity, and the rectangle's coordinates.
+  """
+  EEx.function_from_string(
     :def,
     :svg_rectangle,
-    "lib/rect.xml.eex",
+    ~s(<rect style="fill:<%= color %>;fill-opacity:<%= opacity %>;stroke:none" width="20" height="20" x="<%= x_coord %>" y="<%= y_coord %>"/>),
     [:color, :opacity, :x_coord, :y_coord]
+  )
+
+  EEx.function_from_string(
+    :def,
+    :svg_preamble,
+    ~s(<svg version="1.1" width="20mm" height="20mm" viewBox="0 0 <%= length %> <%= length %>" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">),
+    [:length]
   )
 
   def square_to_rect(
         {presence, index},
         fg_color,
-        bg_color \\ "#ffffff",
-        opacity \\ 1.0
+        bg_color \\ nil,
+        opacity \\ 1.0,
+        divisor \\ 5
       ) do
-    %{x: x_coord, y: y_coord} = index_to_coords(index)
+    %{x: x_coord, y: y_coord} = index_to_coords(index, divisor)
 
-    if presence == 0 do
-      svg_rectangle(bg_color, opacity, x_coord, y_coord)
-    else
-      svg_rectangle(fg_color, opacity, x_coord, y_coord)
-    end
+
+    case {presence, bg_color} do
+      {0, nil} ->
+        ""
+      {0, bg_color} -> svg_rectangle(bg_color, opacity, x_coord, y_coord)
+
+      {1, _} -> svg_rectangle(fg_color, opacity, x_coord, y_coord)
+      end
   end
 
-  def index_to_coords(index) when index in 0..24 do
+  def index_to_coords(index, divisor \\ 5) when is_integer(divisor) do
     %{
-      x: rem(index, 5) * 20,
-      y: div(index, 5) * 20
+      x: rem(index, divisor) * 20,
+      y: div(index, divisor) * 20
     }
   end
 
-  def output_svg(%Identicon{svg: svg}) do
-    pre =
-      ~s(<svg width="100mm" height="100mm" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg">)
-
+  def output_svg(%Identicon{svg: svg, size: size}) do
+    pre = svg_preamble(size*20)
     post = "</svg>"
 
     pre <> List.to_string(svg) <> post
