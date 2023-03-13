@@ -1,1 +1,0 @@
-<rect style="fill:<%= color %>;fill-opacity:<%= opacity %>;stroke:none" width="20" height="20" x="<%= x_coord %>" y="<%= y_coord %>"/>
