@@ -91,10 +91,8 @@ defmodule IdenticonSvg do
   end
 
   @doc """
-  Prepare the request's XML template based on the VAT ID you call for),
-  and authentication settings (username, password, VAT ID you call from).
-  """
-  # statically compile the XML request template and create a function to customize it
+  Generate an SVG rectangle from the `lib/rect.xml.eex` template and the parameters
+  for the foreground color, the overall opacity, and the rectangle's coordinates.  """
   EEx.function_from_file(
     :def,
     :svg_rectangle,
