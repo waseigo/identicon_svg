@@ -26,7 +26,7 @@ defmodule IdenticonSvg.MixProject do
 
   defp description do
     """
-    An Elixir library to easily pull company information from the SOAP web service of the Greek General Secretariat of Information Systems for Public Administration (GSIS) using the VAT ID (Αριθμός Φορολογικού Μητρώου, abbreviated as "ΑΦΜ" or "Α.Φ.Μ.").
+    An Elixir library to generate identicons in SVG format, so they can be inlined in HTML.
     """
   end
 
