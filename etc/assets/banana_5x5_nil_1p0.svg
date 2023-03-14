@@ -1,0 +1,11 @@
+<svg version="1.1" width="20mm" height="20mm" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
+  <rect width="20" height="20" x="0" y="0" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+  <rect width="20" height="20" x="40" y="0" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+  <rect width="20" height="20" x="80" y="0" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+  <rect width="20" height="20" x="40" y="20" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+  <rect width="20" height="20" x="0" y="40" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+  <rect width="20" height="20" x="20" y="40" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+  <rect width="20" height="20" x="60" y="40" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+  <rect width="20" height="20" x="80" y="40" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+  <rect width="20" height="20" x="40" y="80" style="stroke: #72b302; stroke-width: 0; stroke-opacity: 1.0; fill: #72b302; fill-opacity: 1.0;"/>
+</svg>

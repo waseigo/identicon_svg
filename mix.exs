@@ -19,6 +19,7 @@ defmodule IdenticonSvg.MixProject do
         # The main page in the docs
         main: "IdenticonSvg",
         logo: "./logo.png",
+        assets: "etc/assets",
         extras: ["README.md"]
       ]
     ]
