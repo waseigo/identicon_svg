@@ -1,3 +1,5 @@
+![IdenticonSvg logo](logo.png)
+
 # IdenticonSvg
 
 An Elixir library to generate identicons in SVG format, so they can be inlined in HTML.
