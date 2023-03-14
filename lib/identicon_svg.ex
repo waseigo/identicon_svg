@@ -1,8 +1,12 @@
+# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule Identicon do
   @moduledoc """
   Defines the `%Identicon{}` struct used by the functions of the main
   module to gradually process and generate an identicon.
   """
+  @moduledoc since: "0.1.0"
   defstruct text: nil, size: 5, rgb: nil, grid: nil, svg: nil, bg_color: nil, opacity: 1.0
 end
 
@@ -12,6 +16,7 @@ defmodule IdenticonSvg do
   @moduledoc """
   Main module of `IdenticonSvg` that contains all functions of the library.
   """
+  @moduledoc since: "0.1.0"
 
   @doc """
   Generate the SVG code of the identicon for the specified `text`.
