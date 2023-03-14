@@ -1,4 +1,4 @@
-![IdenticonSvg logo](logo.svg)
+![IdenticonSvg logo](logo.png)
 
 # IdenticonSvg
 
