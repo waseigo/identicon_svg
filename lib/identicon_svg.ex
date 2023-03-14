@@ -7,7 +7,13 @@ defmodule Identicon do
   module to gradually process and generate an identicon.
   """
   @moduledoc since: "0.1.0"
-  defstruct text: nil, size: 5, rgb: nil, grid: nil, svg: nil, bg_color: nil, opacity: 1.0
+  defstruct text: nil,
+            size: 5,
+            rgb: nil,
+            grid: nil,
+            svg: nil,
+            bg_color: nil,
+            opacity: 1.0
 end
 
 defmodule IdenticonSvg do
@@ -79,7 +85,9 @@ defmodule IdenticonSvg do
 
   """
 
-  def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0) when is_bitstring(text) and size in 4..10 and (is_bitstring(bg_color) or is_nil(bg_color)) and is_float(opacity) do
+  def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0)
+      when is_bitstring(text) and size in 4..10 and
+             (is_bitstring(bg_color) or is_nil(bg_color)) and is_float(opacity) do
     %Identicon{text: text, size: size, bg_color: bg_color, opacity: opacity}
     |> hash_input()
     |> extract_color()
@@ -98,7 +106,7 @@ defmodule IdenticonSvg do
       7 => :sha3_224,
       8 => :sha3_256,
       9 => :sha3_384,
-      10 => :sha3_512,
+      10 => :sha3_512
     }
 
     hashes[size]
@@ -133,6 +141,7 @@ defmodule IdenticonSvg do
   defp square_grid(%Identicon{grid: grid, size: size} = input) do
     odd = rem(size, 2)
     chunks = Integer.floor_div(size, 2) + odd
+
     grid =
       grid
       |> Enum.chunk_every(chunks)
@@ -169,8 +178,14 @@ defmodule IdenticonSvg do
   end
 
   defp color_all_squares(
-        %Identicon{grid: grid, size: size, rgb: fg_color, bg_color: bg_color, opacity: opacity} = input
-      ) do
+         %Identicon{
+           grid: grid,
+           size: size,
+           rgb: fg_color,
+           bg_color: bg_color,
+           opacity: opacity
+         } = input
+       ) do
     svg =
       grid
       |> Enum.map(&square_to_rect(&1, fg_color, bg_color, opacity, size))
@@ -193,21 +208,24 @@ defmodule IdenticonSvg do
   )
 
   defp square_to_rect(
-        {presence, index},
-        fg_color,
-        bg_color,
-        opacity,
-        divisor
-      ) do
+         {presence, index},
+         fg_color,
+         bg_color,
+         opacity,
+         divisor
+       ) do
     %{x: x_coord, y: y_coord} = index_to_coords(index, divisor)
 
     case {presence, bg_color} do
       {0, nil} ->
         ""
-      {0, _} -> svg_rectangle(x_coord, y_coord, bg_color, opacity)
 
-      {1, _} -> svg_rectangle(x_coord, y_coord, fg_color, opacity)
-      end
+      {0, _} ->
+        svg_rectangle(x_coord, y_coord, bg_color, opacity)
+
+      {1, _} ->
+        svg_rectangle(x_coord, y_coord, fg_color, opacity)
+    end
   end
 
   defp index_to_coords(index, divisor) when is_integer(divisor) do
@@ -218,7 +236,7 @@ defmodule IdenticonSvg do
   end
 
   defp output_svg(%Identicon{svg: svg, size: size}) do
-    pre = svg_preamble(size*20)
+    pre = svg_preamble(size * 20)
     post = "</svg>"
 
     pre <> List.to_string(svg) <> post
