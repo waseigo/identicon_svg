@@ -30,20 +30,28 @@ defmodule IdenticonSvg do
   Without specifying any optional arguments this function generates a 5x5 identicon
   with a transparent background and colored grid squares with full opacity.
 
+  A different hashing function is used automatically for each identicon `size`,
+  so that the utilization of bits is maximized for the given size:
+  * MD5 for sizes 4 and 5,
+  * RIPEMD-160 for 6, and
+  * SHA3 for 7 to 10 with 224, 256, 384 and 512 bits, respectively.
+
   Optionally, specify any combination of the following arguments:
 
   * `size`: the number of grid squares of the identicon's side; integer, 4 to 10; 5 by default.
-  * `bg_color`: the color of the background grid squares; string, hex code (e.g., `#eee`); `nil` by default.
+  * `bg_color`: the color of the background grid squares as a hex code string (e.g., `#eee`) _or_ an atom specifying the color complementarity (se below); `nil` by default.
   * `opacity`: the opacity of the entire identicon (all grid squares); float, 0.0 to 1.0; 1.0 by default.
+
+  The color of the foreground grid squares is always equal to the three first bytes of the
+  hash of `text`, regardless of which hashing function is used automatically.
 
   Setting `bg_color` to `nil` (default value) generates only the foreground (colored) squares,
   with the default (1.0) or requested `opacity`.
 
-  The color of the grid squares is always equal to the three first bytes of the
-  hash of `text`, regardless of which hashing function is used automatically.
-
-  A different hashing function is used automatically for each identicon `size`,
-  so that the utilization of bits is maximized for the given size: MD5 for sizes 4 and 5, RIPEMD-160 for 6, and SHA3 for 7 to 10 with 224, 256, 384 and 512 bits, respectively.
+  _New since v0.8.0:_ Setting `bg_color` to one of the following 3 atom values sets the color of the background squares to the corresponding RGB-complementary color of the automatically-defined foreground color, with the default (1.0) or requested `opacity`:
+  * `:basic`: the complementary color, i.e. the opposite color of `fg_color` on the color wheel.
+  * `:split1`: the first adjacent tertiary color of the complement of `fg_color` on the color wheel.
+  * `:split2`: the second adjacent tertiary color of the complement of `fg_color` on the color wheel.
 
   ## Examples
 
@@ -53,6 +61,23 @@ defmodule IdenticonSvg do
   ```
   ![5x5 identicon for "banana", at full opacity, with transparent background](assets/banana_5x5_nil_1p0.svg)
 
+  5x5 identicon with complementary background color:
+  ```elixir
+  generate("banana", 5, :basic)
+  ```
+  ![5x5 identicon for "banana", at full opacity, with complementary background](assets/banana_5x5_basic_1p0.svg)
+
+  5x5 identicon with first split-complementary background color:
+  ```elixir
+  generate("banana", 5, :split1)
+  ```
+  ![5x5 identicon for "banana", at full opacity, with first split-complementary background](assets/banana_5x5_split1_1p0.svg)
+
+  5x5 identicon with second split-complementary background color:
+  ```elixir
+  generate("banana", 5, :split2)
+  ```
+  ![5x5 identicon for "banana", at full opacity, with second split-complementary background](assets/banana_5x5_split2_1p0.svg)
 
   6x6 identicon with transparent background:
   ```elixir
@@ -61,12 +86,11 @@ defmodule IdenticonSvg do
   ![6x6 identicon for "pineapple", at full opacity, with transparent background](assets/pineapple_6x6_nil_1p0.svg)
 
 
-
-  7x7 identicon with light gray (`#d3d3d3`) background:
+  7x7 identicon with blue (`#33f`) background:
   ```elixir
-  generate("refrigerator", 7, "#d3d3d3")
+  generate("refrigerator", 7, "#33f")
   ```
-  ![7x7 identicon for "refrigerator", at full opacity, with light gray background](assets/refrigerator_7x7_d3d3d3_1p0.svg)
+  ![7x7 identicon for "refrigerator", at full opacity, with blue background](assets/refrigerator_7x7_33f_1p0.svg)
 
 
   9x9 identicon with transparent background and 50% opacity:
@@ -87,8 +111,14 @@ defmodule IdenticonSvg do
 
   def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0)
       when is_bitstring(text) and size in 4..10 and
-             (is_bitstring(bg_color) or is_nil(bg_color)) and is_float(opacity) do
-    %Identicon{text: text, size: size, bg_color: bg_color, opacity: opacity}
+             (is_bitstring(bg_color) or is_nil(bg_color) or is_atom(bg_color)) and
+             is_float(opacity) do
+    %Identicon{
+      text: text,
+      size: size,
+      bg_color: bg_color,
+      opacity: opacity
+    }
     |> hash_input()
     |> extract_color()
     |> square_grid()
@@ -136,6 +166,56 @@ defmodule IdenticonSvg do
   defp integer_to_hex(value) when is_integer(value) and value in 0..255 do
     Integer.to_string(value, 16)
     |> String.pad_leading(2, "0")
+  end
+
+  defp hex_to_rgb(hex) when is_bitstring(hex) and byte_size(hex) in [4, 7] do
+    <<r, g, b>> =
+      hex
+      |> String.trim_leading("#")
+      |> String.upcase()
+      |> rgb_to_6chars()
+      |> Base.decode16!()
+
+    [r, g, b]
+  end
+
+  defp rgb_to_6chars(hex) when is_bitstring(hex) do
+    case byte_size(hex) do
+      3 ->
+        hex
+        |> String.trim_leading("#")
+        |> String.graphemes()
+        |> Enum.map_join(fn c -> String.duplicate(c, 2) end)
+
+      6 ->
+        hex
+
+      _ ->
+        raise ArgumentError, "Invalid hex color format"
+    end
+  end
+
+  defp color_wheel([r, g, b], compl: :basic)
+       when is_integer(r) and is_integer(g) and is_integer(b) do
+    [255 - r, 255 - g, 255 - b]
+    |> Enum.map(&integer_to_hex/1)
+    |> List.insert_at(0, "#")
+    |> List.to_string()
+  end
+
+  defp color_wheel([r, g, b], compl: split)
+       when is_integer(r) and is_integer(g) and is_integer(b) and
+              split in [:split1, :split2] do
+    case split do
+      :split1 ->
+        [r, 255 - g, 255 - b]
+
+      :split2 ->
+        [255 - r, 255 - g, b]
+    end
+    |> Enum.map(&integer_to_hex/1)
+    |> List.insert_at(0, "#")
+    |> List.to_string()
   end
 
   defp square_grid(%Identicon{grid: grid, size: size} = input) do
@@ -213,8 +293,33 @@ defmodule IdenticonSvg do
          bg_color,
          opacity,
          divisor
-       ) do
+       )
+       when is_bitstring(bg_color) or is_atom(bg_color) do
     %{x: x_coord, y: y_coord} = index_to_coords(index, divisor)
+
+    bg_color =
+      case bg_color do
+        :basic ->
+          fg_color
+          |> hex_to_rgb()
+          |> color_wheel(compl: :basic)
+
+        :split1 ->
+          fg_color
+          |> hex_to_rgb()
+          |> color_wheel(compl: :split1)
+
+        :split2 ->
+          fg_color
+          |> hex_to_rgb()
+          |> color_wheel(compl: :split2)
+
+        nil ->
+          nil
+
+        _ ->
+          bg_color
+      end
 
     case {presence, bg_color} do
       {0, nil} ->
