@@ -4,7 +4,7 @@ defmodule IdenticonSvg.MixProject do
   def project do
     [
       app: :identicon_svg,
-      version: "0.7.0",
+      version: "0.8.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -18,7 +18,7 @@ defmodule IdenticonSvg.MixProject do
       docs: [
         # The main page in the docs
         main: "IdenticonSvg",
-        logo: "./logo.png",
+        logo: "./assets/logo.png",
         assets: "etc/assets",
         extras: ["README.md"]
       ]
