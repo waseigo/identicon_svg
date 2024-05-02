@@ -262,13 +262,12 @@ defmodule IdenticonSvg do
            grid: grid,
            size: size,
            rgb: fg_color,
-           bg_color: bg_color,
            opacity: opacity
          } = input
        ) do
     svg =
       grid
-      |> Enum.map(&square_to_rect(&1, fg_color, bg_color, opacity, size))
+      |> Enum.map(&square_to_rect(&1, fg_color, opacity, size))
 
     %{input | svg: svg}
   end
@@ -283,20 +282,40 @@ defmodule IdenticonSvg do
   EEx.function_from_string(
     :defp,
     :svg_preamble,
-    ~s(<svg version="1.1" width="20mm" height="20mm" viewBox="0 0 <%= length %> <%= length %>" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">\n),
-    [:length]
+    ~s(<svg version="1.1" width="20mm" height="20mm" viewBox="0 0 <%= length %> <%= length %>" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="<%= bg_color %>" />\n),
+    [:length, :bg_color]
   )
 
   defp square_to_rect(
          {presence, index},
          fg_color,
-         bg_color,
          opacity,
          divisor
-       )
-       when is_bitstring(bg_color) or is_atom(bg_color) do
+       ) do
     %{x: x_coord, y: y_coord} = index_to_coords(index, divisor)
 
+    case presence do
+      0 ->
+        ""
+
+      1 ->
+        svg_rectangle(x_coord, y_coord, fg_color, opacity)
+    end
+  end
+
+  defp index_to_coords(index, divisor) when is_integer(divisor) do
+    %{
+      x: rem(index, divisor) * 20,
+      y: div(index, divisor) * 20
+    }
+  end
+
+  defp output_svg(%Identicon{
+         svg: svg,
+         size: size,
+         rgb: fg_color,
+         bg_color: bg_color
+       }) do
     bg_color =
       case bg_color do
         :basic ->
@@ -315,33 +334,13 @@ defmodule IdenticonSvg do
           |> color_wheel(compl: :split2)
 
         nil ->
-          nil
+          "none"
 
         _ ->
           bg_color
       end
 
-    case {presence, bg_color} do
-      {0, nil} ->
-        ""
-
-      {0, _} ->
-        svg_rectangle(x_coord, y_coord, bg_color, opacity)
-
-      {1, _} ->
-        svg_rectangle(x_coord, y_coord, fg_color, opacity)
-    end
-  end
-
-  defp index_to_coords(index, divisor) when is_integer(divisor) do
-    %{
-      x: rem(index, divisor) * 20,
-      y: div(index, divisor) * 20
-    }
-  end
-
-  defp output_svg(%Identicon{svg: svg, size: size}) do
-    pre = svg_preamble(size * 20)
+    pre = svg_preamble(size * 20, bg_color)
     post = "</svg>"
 
     pre <> List.to_string(svg) <> post
