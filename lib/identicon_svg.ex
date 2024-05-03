@@ -203,14 +203,17 @@ defmodule IdenticonSvg do
           size: size,
           fg_color: fg_color,
           bg_color: bg_color,
-          opacity: opacity
+          opacity: opacity,
+          padding: padding
         } = input
       ) do
     bg_color = determine_background_color(fg_color, bg_color)
 
     svg =
       grid
-      |> Enum.map(&square_to_rect(&1, fg_color, bg_color, opacity, size))
+      |> Enum.map(
+        &square_to_rect(&1, fg_color, bg_color, opacity, size, padding)
+      )
 
     %{input | svg: svg}
   end
@@ -224,15 +227,25 @@ defmodule IdenticonSvg do
     row ++ mirror
   end
 
+  def index_to_coords(index, divisor, padding \\ 0)
+      when is_integer(index) and is_integer(divisor) and is_integer(padding) and
+             padding >= 0 do
+    %{
+      x: (rem(index, divisor) + padding) * 20,
+      y: (div(index, divisor) + padding) * 20
+    }
+  end
+
   def square_to_rect(
         {presence, index},
         fg_color,
         bg_color,
         opacity,
-        divisor
+        divisor,
+        padding
       )
       when is_bitstring(bg_color) or is_atom(bg_color) do
-    %{x: x_coord, y: y_coord} = index_to_coords(index, divisor)
+    %{x: x_coord, y: y_coord} = index_to_coords(index, divisor, padding)
 
     case {presence, bg_color} do
       {0, nil} ->
@@ -247,7 +260,8 @@ defmodule IdenticonSvg do
   end
 
   defp determine_background_color(fg_color, bg_color)
-       when is_atom(bg_color) and bg_color in [:basic, :split1, :split2] do
+       when is_bitstring(fg_color) and is_atom(bg_color) and
+              bg_color in [:basic, :split1, :split2] do
     fg_color
     |> Color.hex_to_rgb()
     |> Color.color_wheel(compl: bg_color)
@@ -263,15 +277,8 @@ defmodule IdenticonSvg do
     nil
   end
 
-  defp index_to_coords(index, divisor) when is_integer(divisor) do
-    %{
-      x: rem(index, divisor) * 20,
-      y: div(index, divisor) * 20
-    }
-  end
-
-  defp output_svg(%Identicon{svg: svg, size: size}) do
-    pre = Draw.svg_preamble(size * 20)
+  defp output_svg(%Identicon{svg: svg, size: size, padding: padding}) do
+    pre = Draw.svg_preamble((size + padding * 2) * 20)
     post = "</svg>"
 
     pre <> List.to_string(svg) <> post
