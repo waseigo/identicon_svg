@@ -9,7 +9,7 @@ defmodule Identicon do
   @moduledoc since: "0.1.0"
   defstruct text: nil,
             size: 5,
-            rgb: nil,
+            fg_color: nil,
             grid: nil,
             svg: nil,
             bg_color: nil,
@@ -142,7 +142,7 @@ defmodule IdenticonSvg do
     hashes[size]
   end
 
-  defp hash_input(%Identicon{text: text, size: size} = input) do
+  def hash_input(%Identicon{text: text, size: size} = input) do
     grid =
       appropriate_hash(size)
       |> :crypto.hash(text)
@@ -151,8 +151,8 @@ defmodule IdenticonSvg do
     %{input | grid: grid}
   end
 
-  defp extract_color(%Identicon{grid: grid} = input) do
-    rgb =
+  def extract_color(%Identicon{grid: grid} = input) do
+    fg_color =
       grid
       |> Enum.chunk_every(3)
       |> hd()
@@ -160,7 +160,55 @@ defmodule IdenticonSvg do
       |> List.to_string()
       |> String.downcase()
 
-    %{input | rgb: "#" <> rgb}
+    %{input | fg_color: "#" <> fg_color}
+  end
+
+  def square_grid(%Identicon{grid: grid, size: size} = input) do
+    odd = rem(size, 2)
+    chunks = Integer.floor_div(size, 2) + odd
+
+    grid =
+      grid
+      |> Enum.chunk_every(chunks)
+      |> Enum.slice(0, size)
+      |> Enum.map(&mirror_row(&1, odd))
+      |> List.flatten()
+
+    %{input | grid: grid}
+  end
+
+  def mark_present_squares(%Identicon{grid: grid} = input) do
+    grid =
+      grid
+      |> Enum.map(fn x -> 1 - rem(x, 2) end)
+
+    %{input | grid: grid}
+  end
+
+  def generate_coordinates(%Identicon{grid: grid} = input) do
+    grid =
+      grid
+      |> Enum.with_index()
+
+    %{input | grid: grid}
+  end
+
+  def color_all_squares(
+        %Identicon{
+          grid: grid,
+          size: size,
+          fg_color: fg_color,
+          bg_color: bg_color,
+          opacity: opacity
+        } = input
+      ) do
+    bg_color = determine_background_color(fg_color, bg_color)
+
+    svg =
+      grid
+      |> Enum.map(&square_to_rect(&1, fg_color, bg_color, opacity, size))
+
+    %{input | svg: svg}
   end
 
   defp integer_to_hex(value) when is_integer(value) and value in 0..255 do
@@ -218,20 +266,6 @@ defmodule IdenticonSvg do
     |> List.to_string()
   end
 
-  defp square_grid(%Identicon{grid: grid, size: size} = input) do
-    odd = rem(size, 2)
-    chunks = Integer.floor_div(size, 2) + odd
-
-    grid =
-      grid
-      |> Enum.chunk_every(chunks)
-      |> Enum.slice(0, size)
-      |> Enum.map(&mirror_row(&1, odd))
-      |> List.flatten()
-
-    %{input | grid: grid}
-  end
-
   defp mirror_row(row, odd) when odd in 0..1 do
     mirror =
       row
@@ -239,38 +273,6 @@ defmodule IdenticonSvg do
       |> Enum.reverse()
 
     row ++ mirror
-  end
-
-  defp mark_present_squares(%Identicon{grid: grid} = input) do
-    grid =
-      grid
-      |> Enum.map(fn x -> 1 - rem(x, 2) end)
-
-    %{input | grid: grid}
-  end
-
-  defp generate_coordinates(%Identicon{grid: grid} = input) do
-    grid =
-      grid
-      |> Enum.with_index()
-
-    %{input | grid: grid}
-  end
-
-  defp color_all_squares(
-         %Identicon{
-           grid: grid,
-           size: size,
-           rgb: fg_color,
-           bg_color: bg_color,
-           opacity: opacity
-         } = input
-       ) do
-    svg =
-      grid
-      |> Enum.map(&square_to_rect(&1, fg_color, bg_color, opacity, size))
-
-    %{input | svg: svg}
   end
 
   EEx.function_from_string(
@@ -297,30 +299,6 @@ defmodule IdenticonSvg do
        when is_bitstring(bg_color) or is_atom(bg_color) do
     %{x: x_coord, y: y_coord} = index_to_coords(index, divisor)
 
-    bg_color =
-      case bg_color do
-        :basic ->
-          fg_color
-          |> hex_to_rgb()
-          |> color_wheel(compl: :basic)
-
-        :split1 ->
-          fg_color
-          |> hex_to_rgb()
-          |> color_wheel(compl: :split1)
-
-        :split2 ->
-          fg_color
-          |> hex_to_rgb()
-          |> color_wheel(compl: :split2)
-
-        nil ->
-          nil
-
-        _ ->
-          bg_color
-      end
-
     case {presence, bg_color} do
       {0, nil} ->
         ""
@@ -331,6 +309,22 @@ defmodule IdenticonSvg do
       {1, _} ->
         svg_rectangle(x_coord, y_coord, fg_color, opacity)
     end
+  end
+
+  defp determine_background_color(fg_color, bg_color)
+       when is_atom(bg_color) and bg_color in [:basic, :split1, :split2] do
+    fg_color
+    |> hex_to_rgb()
+    |> color_wheel(compl: bg_color)
+  end
+
+  defp determine_background_color(_fg_color, bg_color)
+       when is_bitstring(bg_color) or is_nil(bg_color) do
+    bg_color
+  end
+
+  defp determine_background_color(_fg_color, bg_color) when is_nil(bg_color) do
+    nil
   end
 
   defp index_to_coords(index, divisor) when is_integer(divisor) do
