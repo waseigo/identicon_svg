@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@waseigo.com>
+# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@overbring.com>
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule Identicon do
@@ -13,11 +13,14 @@ defmodule Identicon do
             grid: nil,
             svg: nil,
             bg_color: nil,
-            opacity: 1.0
+            opacity: 1.0,
+            padding: 0
 end
 
 defmodule IdenticonSvg do
   require EEx
+
+  alias IdenticonSvg.{Color, Draw}
 
   @moduledoc """
   Main module of `IdenticonSvg` that contains all functions of the library.
@@ -109,15 +112,16 @@ defmodule IdenticonSvg do
 
   """
 
-  def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0)
+  def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0, padding \\ 0)
       when is_bitstring(text) and size in 4..10 and
              (is_bitstring(bg_color) or is_nil(bg_color) or is_atom(bg_color)) and
-             is_float(opacity) do
+             is_float(opacity) and is_integer(padding) and padding >= 0 do
     %Identicon{
       text: text,
       size: size,
       bg_color: bg_color,
-      opacity: opacity
+      opacity: opacity,
+      padding: padding
     }
     |> hash_input()
     |> extract_color()
@@ -156,7 +160,7 @@ defmodule IdenticonSvg do
       grid
       |> Enum.chunk_every(3)
       |> hd()
-      |> Enum.map(&integer_to_hex/1)
+      |> Enum.map(&Color.integer_to_hex/1)
       |> List.to_string()
       |> String.downcase()
 
@@ -211,61 +215,6 @@ defmodule IdenticonSvg do
     %{input | svg: svg}
   end
 
-  defp integer_to_hex(value) when is_integer(value) and value in 0..255 do
-    Integer.to_string(value, 16)
-    |> String.pad_leading(2, "0")
-  end
-
-  defp hex_to_rgb(hex) when is_bitstring(hex) and byte_size(hex) in [4, 7] do
-    <<r, g, b>> =
-      hex
-      |> String.trim_leading("#")
-      |> String.upcase()
-      |> rgb_to_6chars()
-      |> Base.decode16!()
-
-    [r, g, b]
-  end
-
-  defp rgb_to_6chars(hex) when is_bitstring(hex) do
-    case byte_size(hex) do
-      3 ->
-        hex
-        |> String.trim_leading("#")
-        |> String.graphemes()
-        |> Enum.map_join(fn c -> String.duplicate(c, 2) end)
-
-      6 ->
-        hex
-
-      _ ->
-        raise ArgumentError, "Invalid hex color format"
-    end
-  end
-
-  defp color_wheel([r, g, b], compl: :basic)
-       when is_integer(r) and is_integer(g) and is_integer(b) do
-    [255 - r, 255 - g, 255 - b]
-    |> Enum.map(&integer_to_hex/1)
-    |> List.insert_at(0, "#")
-    |> List.to_string()
-  end
-
-  defp color_wheel([r, g, b], compl: split)
-       when is_integer(r) and is_integer(g) and is_integer(b) and
-              split in [:split1, :split2] do
-    case split do
-      :split1 ->
-        [r, 255 - g, 255 - b]
-
-      :split2 ->
-        [255 - r, 255 - g, b]
-    end
-    |> Enum.map(&integer_to_hex/1)
-    |> List.insert_at(0, "#")
-    |> List.to_string()
-  end
-
   defp mirror_row(row, odd) when odd in 0..1 do
     mirror =
       row
@@ -275,28 +224,14 @@ defmodule IdenticonSvg do
     row ++ mirror
   end
 
-  EEx.function_from_string(
-    :defp,
-    :svg_rectangle,
-    ~s(  <rect width="20" height="20" x="<%= x_coord %>" y="<%= y_coord %>" style="stroke: <%= color %>; stroke-width: 0; stroke-opacity: <%= opacity %>; fill: <%= color %>; fill-opacity: <%= opacity %>;"/>\n),
-    [:x_coord, :y_coord, :color, :opacity]
-  )
-
-  EEx.function_from_string(
-    :defp,
-    :svg_preamble,
-    ~s(<svg version="1.1" width="20mm" height="20mm" viewBox="0 0 <%= length %> <%= length %>" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">\n),
-    [:length]
-  )
-
-  defp square_to_rect(
-         {presence, index},
-         fg_color,
-         bg_color,
-         opacity,
-         divisor
-       )
-       when is_bitstring(bg_color) or is_atom(bg_color) do
+  def square_to_rect(
+        {presence, index},
+        fg_color,
+        bg_color,
+        opacity,
+        divisor
+      )
+      when is_bitstring(bg_color) or is_atom(bg_color) do
     %{x: x_coord, y: y_coord} = index_to_coords(index, divisor)
 
     case {presence, bg_color} do
@@ -304,18 +239,19 @@ defmodule IdenticonSvg do
         ""
 
       {0, _} ->
-        svg_rectangle(x_coord, y_coord, bg_color, opacity)
+        Draw.svg_rectangle(x_coord, y_coord, bg_color, opacity)
 
       {1, _} ->
-        svg_rectangle(x_coord, y_coord, fg_color, opacity)
+        Draw.svg_rectangle(x_coord, y_coord, fg_color, opacity)
     end
   end
 
   defp determine_background_color(fg_color, bg_color)
        when is_atom(bg_color) and bg_color in [:basic, :split1, :split2] do
     fg_color
-    |> hex_to_rgb()
-    |> color_wheel(compl: bg_color)
+    |> Color.hex_to_rgb()
+    |> Color.color_wheel(compl: bg_color)
+    |> Color.rgb_to_hex6()
   end
 
   defp determine_background_color(_fg_color, bg_color)
@@ -335,7 +271,7 @@ defmodule IdenticonSvg do
   end
 
   defp output_svg(%Identicon{svg: svg, size: size}) do
-    pre = svg_preamble(size * 20)
+    pre = Draw.svg_preamble(size * 20)
     post = "</svg>"
 
     pre <> List.to_string(svg) <> post
