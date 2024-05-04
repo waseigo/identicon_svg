@@ -39,12 +39,53 @@ defmodule IdenticonSvg.Geometry do
       }
       |> to_polygon_field()
       |> edge_allocation()
-      #|> mergeable_polygons()
-      #|> merge_all_polygons()
-      #|> all_rects_to_paths()
+
+    # |> mergeable_polygons()
+    # |> merge_all_polygons()
+    # |> all_rects_to_paths()
 
     input
     |> Map.put(layer, sf.polygons)
+  end
+
+  def detect_polygon_breaks(edges) when is_list(edges) do
+    edges_ms = Enum.map(edges, &MapSet.new/1)
+    edges_rot_ms = rotate_list(edges) |> Enum.map(&MapSet.new/1)
+
+    polygon_breaks =
+      Enum.zip(edges_ms, edges_rot_ms)
+      |> Enum.map(&Tuple.to_list/1)
+      |> Enum.map(fn [a, b] -> MapSet.disjoint?(a, b) end)
+
+    break_indices =
+      Enum.zip(0..length(edges), polygon_breaks)
+      |> Map.new()
+      |> Map.filter(fn {_k, v} -> v end)
+      |> Map.keys()
+
+    z = [0] ++ (Enum.reverse(break_indices) |> tl() |> Enum.reverse())
+  end
+
+  def rotate_list([head | tail]) do
+    tail ++ [head]
+  end
+
+  def edge_allocation(%ShapeField{polygons: polygons} = input)
+      when is_list(polygons) do
+    rectsmap =
+      polygons
+      |> Enum.map(fn r -> {r.index, r.edges} end)
+      |> Map.new()
+
+    allocated_edges =
+      rectsmap
+      |> Enum.reduce(%{}, fn {key, values}, acc ->
+        Enum.reduce(values, acc, fn value, acc ->
+          Map.update(acc, value, [key], &(&1 ++ [key]))
+        end)
+      end)
+
+    %{input | allocated_edges: allocated_edges}
   end
 
   def all_rects_to_paths(%ShapeField{polygons: polygons} = input) do
@@ -91,24 +132,6 @@ defmodule IdenticonSvg.Geometry do
       end)
 
     %{input | polygons: polygons}
-  end
-
-  def edge_allocation(%ShapeField{polygons: polygons} = input)
-      when is_list(polygons) do
-    rectsmap =
-      polygons
-      |> Enum.map(fn r -> {r.index, r.edges} end)
-      |> Map.new()
-
-    allocated_edges =
-      rectsmap
-      |> Enum.reduce(%{}, fn {key, values}, acc ->
-        Enum.reduce(values, acc, fn value, acc ->
-          Map.update(acc, value, [key], &(&1 ++ [key]))
-        end)
-      end)
-
-    %{input | allocated_edges: allocated_edges}
   end
 
   def mergeable_polygons(%ShapeField{allocated_edges: allocated_edges} = input)

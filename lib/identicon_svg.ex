@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule IdenticonSvg do
-  alias IdenticonSvg.Geometry.Polygon
   alias IdenticonSvg.{Identicon, Color, Draw, PolygonHelper}
 
   @moduledoc """
@@ -110,7 +109,7 @@ defmodule IdenticonSvg do
     |> extract_color()
     |> square_grid()
     |> mark_present_squares()
-    |> extract_both_layer_edges()
+    |> extract_both_layer_polygons()
 
     # |> all_edges_of_all_rectangles(layer: :fg)
 
@@ -130,18 +129,18 @@ defmodule IdenticonSvg do
     #    |> output_svg()
   end
 
-  def extract_both_layer_edges(%Identicon{} = input) do
-    fg_edges = extract_polygon_edges(input, layer: :fg)
+  def extract_both_layer_polygons(%Identicon{} = input) do
+    fg_polygons = extract_polygon_edges(input, layer: :fg)
 
-    bg_edges =
+    bg_polygons =
       case input.bg_color do
         nil -> nil
         _ -> extract_polygon_edges(input, layer: :bg)
       end
 
     input
-    |> Map.put(:fg_edges, fg_edges)
-    |> Map.put(:bg_edges, bg_edges)
+    |> Map.put(:fg_polygons, fg_polygons)
+    |> Map.put(:bg_polygons, bg_polygons)
   end
 
   def extract_polygon_edges(%Identicon{} = input, layer: layer) do

@@ -5,26 +5,46 @@ defmodule IdenticonSvg.PolygonHelper do
 
   def connect(candidates, []) do
     [edge | candidates_new] = candidates
-    connect(candidates_new, [edge])
+    connect(candidates_new, [[edge]])
   end
 
-  def connect(candidates, edges) when candidates != [] do
-    [edge | candidates_new] = candidates
+  def connect(candidates, polygons) when candidates != [] do
+    polygon = hd(polygons)
 
-    next_neighbor =
-      candidates
+    edge =
+      case polygon do
+        [] -> hd(candidates)
+        _ -> hd(polygon)
+      end
+
+    candidates2 =
+      case polygon do
+        [] -> tl(candidates)
+        _ -> candidates
+      end
+
+    neighbors =
+      candidates2
       |> Enum.filter(
         &(MapSet.disjoint?(MapSet.new(&1), MapSet.new(edge)) == false)
       )
-      |> hd()
 
-    edges_new = [next_neighbor | edges]
-    candidates_new = List.delete(candidates_new, MapSet.new(next_neighbor))
+    case neighbors do
+      [] ->
+        polygons_new = [[] | polygons]
+        connect(candidates2, polygons_new)
 
-    connect(candidates_new, edges_new)
+      _ ->
+        next_neighbor = hd(neighbors)
+        polygon_new = [next_neighbor | polygon]
+        candidates_new = List.delete(candidates2, next_neighbor)
+        polygons_new = [polygon_new | tl(polygons)]
+
+        connect(candidates_new, polygons_new)
+    end
   end
 
-  def connect([], edges) do
-    edges
+  def connect([], polygons) do
+    polygons
   end
 end
