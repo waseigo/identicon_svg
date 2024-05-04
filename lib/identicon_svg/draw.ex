@@ -4,6 +4,9 @@
 defmodule IdenticonSvg.Draw do
   require EEx
 
+  alias IdenticonSvg.Geometry
+  alias IdenticonSvg.Geometry.{ShapeField, Polygon}
+
   @moduledoc """
   Module of `IdenticonSvg` that contains functions related to drawing SVG elements.
   """
@@ -35,5 +38,56 @@ defmodule IdenticonSvg.Draw do
   """
   def svg_preamble(length) do
     svg_preamble_template(length)
+  end
+
+  EEx.function_from_string(
+    :defp,
+    :svg_path_template,
+    ~s(  <path d="<%= path_d %>" style="stroke: <%= color %>; stroke-width: 0; stroke-opacity: <%= opacity %>; fill: <%= color %>; fill-opacity: <%= opacity %>;"/>\n),
+    [:path_d, :color, :opacity]
+  )
+
+  @doc """
+  Convert a list of path coordinates to an SVG path attribute `d`.
+  """
+
+  def path_coords_to_string([moveto | linetos] = coords) when is_list(coords) do
+    moveto = ["M" | moveto]
+
+    linetos =
+      linetos
+      |> Enum.map(fn lineto ->
+        ["L" | lineto]
+      end)
+
+    [moveto, linetos, "z"]
+    |> List.flatten()
+    |> Enum.join(" ")
+  end
+
+  @doc """
+  Generate an SVG path.
+  """
+  def svg_path_polygon(path_d, color, opacity) do
+    svg_path_template(path_d, color, opacity)
+  end
+
+  @doc """
+  Convert an %IdenticonSvg.Polygon{} to the `d` attribute string of an SVG path.
+  """
+  def polygon_to_path_d(%Polygon{} = input, scale \\ 20)
+      when is_integer(scale) do
+    input
+    |> Geometry.polygon_to_edgelist()
+    |> scale_coords(scale)
+    |> path_coords_to_string()
+  end
+
+  def scale_coords(coords, scale \\ 20)
+      when is_list(coords) and is_integer(scale) do
+    coords
+    |> List.flatten()
+    |> Enum.map(&Kernel.*(&1, scale))
+    |> Enum.chunk_every(2)
   end
 end
