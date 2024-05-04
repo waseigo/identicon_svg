@@ -12,11 +12,10 @@ defmodule IdenticonSvg.Identicon do
             padding: 0,
             grid: nil,
             svg: nil,
-            fg_color: nil,
+            colors: %{fg: nil, bg: nil},
+            layers: %{fg: nil, bg: nil},
+            squares: %{fg: nil, bg: nil},
             fg: nil,
-            fg_polygons: nil,
-            bg_color: nil,
             bg: nil,
-            bg_polygons: nil,
             opacity: 1.0
 end

@@ -101,51 +101,64 @@ defmodule IdenticonSvg do
     %Identicon{
       text: text,
       size: size,
-      bg_color: bg_color,
       opacity: opacity,
       padding: padding
     }
+    |> Map.put(:colors, %{bg: bg_color, fg: nil})
     |> hash_input()
-    |> extract_color()
+    |> extract_colors()
     |> square_grid()
     |> mark_present_squares()
-    |> extract_both_layer_polygons()
-
-    # |> all_edges_of_all_rectangles(layer: :fg)
-
-    #    |> Geometry.shape_field(layer: :fg)
-    #    |> Map.get(:fg)
-    #    |> Enum.map(&IdenticonSvg.Draw.polygon_to_path_d(&1))
-    #    |> Enum.map(&IdenticonSvg.Draw.svg_path_polygon(&1, "#f00", 1.0))
-    #    |> IO.puts
-
-    # |> Geometry.shape_field()
-
-    # |> Geometry.edge_allocation(layer: :fg)
-    # |> Geometry.edge_allocation(layer: :bg)
-
-    # |> generate_coordinates()
-    #    |> color_all_squares()
-    #    |> output_svg()
+    |> extract_polygons_both_layers()
+    |> generate_svg_both_layers()
+    |> output_svg()
   end
 
-  def extract_both_layer_polygons(%Identicon{} = input) do
+  def generate_svg_both_layers(%Identicon{} = input) do
+    fg = generate_svg_of_layer(input, layer: :fg)
+    bg = generate_svg_of_layer(input, layer: :bg)
+    svg = %{fg: fg, bg: bg}
+    %{input | svg: svg}
+  end
+
+  def generate_svg_of_layer(%Identicon{layers: layers, colors: colors, opacity: opacity}, layer: layer) do
+    polygons = Map.get(layers, layer)
+    svg =
+    case polygons do
+      nil -> ""
+      _ ->
+        color = Map.get(colors, layer)
+
+        polygons
+        |> Enum.map(&Draw.polygon_to_path_d(&1))
+        |> Enum.map(&Draw.svg_path_polygon(&1))
+        |> List.to_string()
+        |> Draw.svg_g(color, opacity)
+    end
+
+    svg
+  end
+
+  def extract_polygons_both_layers(%Identicon{colors: %{bg: bg_color}} = input) do
     fg_polygons = extract_polygon_edges(input, layer: :fg)
 
     bg_polygons =
-      case input.bg_color do
+      case bg_color do
         nil -> nil
         _ -> extract_polygon_edges(input, layer: :bg)
       end
 
     input
-    |> Map.put(:fg_polygons, fg_polygons)
-    |> Map.put(:bg_polygons, bg_polygons)
+    |> Map.put(:layers,
+     %{fg: fg_polygons,
+       bg: bg_polygons}
+    )
   end
 
   def extract_polygon_edges(%Identicon{} = input, layer: layer) do
     input
     |> all_edges_of_all_rectangles(layer: layer)
+    |> Map.get(:squares)
     |> Map.get(layer)
     |> PolygonHelper.connect()
   end
@@ -173,7 +186,7 @@ defmodule IdenticonSvg do
     %{input | grid: grid}
   end
 
-  def extract_color(%Identicon{grid: grid} = input) do
+  def extract_colors(%Identicon{grid: grid, colors: %{bg: bg_color}} = input) do
     fg_color =
       grid
       |> Enum.chunk_every(3)
@@ -181,8 +194,17 @@ defmodule IdenticonSvg do
       |> Enum.map(&Color.integer_to_hex/1)
       |> List.to_string()
       |> String.downcase()
+      |> String.pad_leading(7, "#")
 
-    %{input | fg_color: "#" <> fg_color}
+      bg_color = determine_background_color(fg_color, bg_color)
+
+      input
+      |> Map.put(:colors,
+        %{
+          fg: fg_color,
+          bg: bg_color
+        }
+      )
   end
 
   def square_grid(%Identicon{grid: grid, size: size, padding: padding} = input) do
@@ -228,7 +250,12 @@ defmodule IdenticonSvg do
     fg = grid |> Enum.filter(&(Map.get(&1, :presence) == 1))
     bg = grid -- fg
 
-    %{input | fg: fg, bg: bg}
+    input
+    |> Map.put(:squares,
+    %{
+      fg: fg,
+      bg: bg}
+    )
   end
 
   def generate_coordinates(%Identicon{grid: grid} = input) do
@@ -237,27 +264,6 @@ defmodule IdenticonSvg do
       |> Enum.with_index()
 
     %{input | grid: grid}
-  end
-
-  def color_all_squares(
-        %Identicon{
-          grid: grid,
-          size: size,
-          fg_color: fg_color,
-          bg_color: bg_color,
-          opacity: opacity,
-          padding: padding
-        } = input
-      ) do
-    bg_color = determine_background_color(fg_color, bg_color)
-
-    svg =
-      grid
-      |> Enum.map(
-        &square_to_rect(&1, fg_color, bg_color, opacity, size + 2 * padding)
-      )
-
-    %{input | svg: svg}
   end
 
   defp mirror_row(row, odd) when odd in 0..1 do
@@ -275,28 +281,6 @@ defmodule IdenticonSvg do
       x: rem(index, divisor),
       y: div(index, divisor)
     }
-  end
-
-  def square_to_rect(
-        {presence, index},
-        fg_color,
-        bg_color,
-        opacity,
-        divisor
-      )
-      when is_bitstring(bg_color) or is_atom(bg_color) do
-    %{x: x_coord, y: y_coord} = index_to_coords(index, divisor)
-
-    case {presence, bg_color} do
-      {0, nil} ->
-        ""
-
-      {0, _} ->
-        Draw.svg_rectangle(x_coord, y_coord, bg_color, opacity)
-
-      {1, _} ->
-        Draw.svg_rectangle(x_coord, y_coord, fg_color, opacity)
-    end
   end
 
   defp determine_background_color(fg_color, bg_color)
@@ -320,8 +304,9 @@ defmodule IdenticonSvg do
   def output_svg(%Identicon{svg: svg, size: size, padding: padding}) do
     pre = Draw.svg_preamble((size + padding * 2) * 20)
     post = "</svg>"
+    content = svg |> Map.values() |> List.to_string()
 
-    pre <> List.to_string(svg) <> post
+    pre <> content <> post
   end
 
   def module_count(%Identicon{size: size, padding: padding}) do
@@ -340,8 +325,6 @@ defmodule IdenticonSvg do
   end
 
   def all_edges_of_rectangle(%{col: x0, row: y0}) do
-    # %{col: x0, row: y0} = index_to_col_row(index, divisor)
-
     x1 = x0 + 1
     y1 = y0 + 1
 
@@ -354,20 +337,22 @@ defmodule IdenticonSvg do
 
     (vertices ++ [List.first(vertices)])
     |> Enum.chunk_every(2, 1, :discard)
-
-    # |> Enum.map(&MapSet.new/1)
   end
 
-  def all_edges_of_all_rectangles(%Identicon{} = input, layer: layer) do
+  def all_edges_of_all_rectangles(%Identicon{squares: squares} = input, layer: layer) do
     edges =
-      input
+      squares
       |> Map.get(layer)
       |> Enum.map(&all_edges_of_rectangle/1)
       |> Enum.concat()
       |> remove_duplicate_edges()
 
-    input
-    |> Map.put(layer, edges)
+    new_squares =
+      squares
+      |> Map.put(layer, edges)
+
+      input
+    |> Map.put(:squares, new_squares)
   end
 
   def remove_duplicate_edges(edges) do
