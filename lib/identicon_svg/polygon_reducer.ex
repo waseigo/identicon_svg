@@ -1,4 +1,12 @@
+# SPDX-FileCopyrightText: 2024 Isaak Tsalicoglou <isaak@overbring.com>
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule IdenticonSvg.PolygonReducer do
+  @moduledoc """
+  Module incorporating functions that find neighboring squares and use `Enum.reduce/3` to group them into polygons.
+  """
+  @moduledoc since: "1.0.0"
+
   def index_to_col_row(index, divisor) do
     col = rem(index, divisor)
     row = div(index, divisor)
@@ -42,10 +50,13 @@ defmodule IdenticonSvg.PolygonReducer do
     |> Map.new()
   end
 
-  def group_into_polygons(s) do
-    Enum.reduce(s, %{}, fn {index, neighbors}, polygons ->
+  def group_into_polygons(neighbors_per_indexed_square)
+      when is_map(neighbors_per_indexed_square) do
+    neighbors_per_indexed_square
+    |> Enum.reduce(%{}, fn {index, neighbors}, polygons ->
       reducer({index, neighbors}, polygons)
     end)
+    |> Map.values()
   end
 
   def reducer({index, neighbors}, polygons) do
