@@ -43,9 +43,9 @@ defmodule IdenticonSvg.PolygonReducer do
   end
 
   def doit(s) do
-    Enum.reduce(s, %{allocations: %{}, visited: []}, fn {index, neighbors},
+    Enum.reduce(s, %{allocations: %{}}, fn {index, neighbors},
                                                         polygons ->
-      IdenticonSvg.PolygonReducer.reducer({index, neighbors}, polygons)
+      reducer({index, neighbors}, polygons)
     end)
   end
 
@@ -56,42 +56,48 @@ defmodule IdenticonSvg.PolygonReducer do
     # if index not in polygons[:visited] do
     #    IO.inspect(polygons)
     allocated =
-      polygons[:allocations] |> Map.values() |> List.flatten() |> Enum.uniq()
+      polygons[:allocations]
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.uniq()
       |> disjoint?(neighbors)
       |> Kernel.not()
 
-    if not allocated and index not in polygons[:visited] do
+    if not allocated do
       IO.puts("index #{index} NOT in allocated")
+
       allocations =
         polygons[:allocations]
         |> Map.put(index, Enum.uniq([index | neighbors]))
 
       polygons
       |> Map.put(:allocations, allocations)
-      |> Map.put(:visited, polygons[:visited] ++ [index])
+      #|> Map.put(:visited, polygons[:visited] ++ [index])
     else
       IO.puts("index #{index} IN allocated")
-      x = polygons[:allocations]
-      |> Map.filter(fn {_k, v} ->
-        disjoint?(neighbors, v) == false
-      end) |> IO.inspect(charlists: :as_lists)
-      |> Map.keys()
-      |> hd()
 
+      x =
+        polygons[:allocations]
+        |> Map.filter(fn {_k, v} ->
+          disjoint?(neighbors, v) == false
+        end)
+        |> IO.inspect(charlists: :as_lists)
+        |> Map.keys()
+        |> hd()
 
-      xx = polygons[:allocations]
-      |> Map.get(x)
-      |> Kernel.++(neighbors)
-      |> Enum.uniq()
+      xx =
+        polygons[:allocations]
+        |> Map.get(x)
+        |> Kernel.++(neighbors)
+        |> Enum.uniq()
 
-
-      xxx = polygons[:allocations]
-      |> Map.put(x, xx)
-
+      xxx =
+        polygons[:allocations]
+        |> Map.put(x, xx)
 
       polygons
       |> Map.put(:allocations, xxx)
-      |> Map.put(:visited, polygons[:visited] ++ [index])
+      #|> Map.put(:visited, polygons[:visited] ++ [index])
 
       # end
     end
@@ -100,5 +106,4 @@ defmodule IdenticonSvg.PolygonReducer do
   def disjoint?(a, b) when is_list(a) and is_list(b) do
     MapSet.disjoint?(MapSet.new(a), MapSet.new(b))
   end
-
 end
