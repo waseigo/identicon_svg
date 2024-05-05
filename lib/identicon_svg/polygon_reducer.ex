@@ -42,64 +42,40 @@ defmodule IdenticonSvg.PolygonReducer do
     |> Map.new()
   end
 
-  def doit(s) do
-    Enum.reduce(s, %{allocations: %{}}, fn {index, neighbors},
-                                                        polygons ->
+  def group_into_polygons(s) do
+    Enum.reduce(s, %{}, fn {index, neighbors}, polygons ->
       reducer({index, neighbors}, polygons)
     end)
   end
 
   def reducer({index, neighbors}, polygons) do
-    IO.puts("\n")
-    IO.inspect([{index, neighbors}, polygons], charlists: :as_lists)
-
-    # if index not in polygons[:visited] do
-    #    IO.inspect(polygons)
-    allocated =
-      polygons[:allocations]
+    not_seen_before =
+      polygons
       |> Map.values()
       |> List.flatten()
       |> Enum.uniq()
       |> disjoint?(neighbors)
-      |> Kernel.not()
 
-    if not allocated do
-      IO.puts("index #{index} NOT in allocated")
-
-      allocations =
-        polygons[:allocations]
-        |> Map.put(index, Enum.uniq([index | neighbors]))
-
+    if not_seen_before do
       polygons
-      |> Map.put(:allocations, allocations)
-      #|> Map.put(:visited, polygons[:visited] ++ [index])
+      |> Map.put(index, Enum.uniq([index | neighbors]))
     else
-      IO.puts("index #{index} IN allocated")
-
-      x =
-        polygons[:allocations]
+      existing_polygon_index =
+        polygons
         |> Map.filter(fn {_k, v} ->
           disjoint?(neighbors, v) == false
         end)
-        |> IO.inspect(charlists: :as_lists)
         |> Map.keys()
         |> hd()
 
-      xx =
-        polygons[:allocations]
-        |> Map.get(x)
+      new_polygon_content =
+        polygons
+        |> Map.get(existing_polygon_index)
         |> Kernel.++(neighbors)
         |> Enum.uniq()
 
-      xxx =
-        polygons[:allocations]
-        |> Map.put(x, xx)
-
       polygons
-      |> Map.put(:allocations, xxx)
-      #|> Map.put(:visited, polygons[:visited] ++ [index])
-
-      # end
+      |> Map.put(existing_polygon_index, new_polygon_content)
     end
   end
 
