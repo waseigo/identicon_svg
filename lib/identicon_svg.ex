@@ -116,7 +116,8 @@ defmodule IdenticonSvg do
     |> square_grid()
 
     |> extract_foreground_squares()
-    |> group_squares_into_polygons()
+    |> find_neighboring_squares()
+    |> group_neighbors_into_polygons()
 
     # |> convert_both_layers_into_edgelists()
     # |> generate_svg()
@@ -146,31 +147,24 @@ defmodule IdenticonSvg do
     %{input | edges: edges}
   end
 
-  def group_squares_into_polygons(
-        %Identicon{squares: squares} = input
-      ) do
+  def find_neighboring_squares(%Identicon{squares: squares} = input) do
     divisor = module_count(input)
 
-    polygons = PolygonReducer.group(squares, divisor)
+    neighbors =
+    squares
+    |> PolygonReducer.neighbors_per_index(divisor)
+
+    %{input | neighbors: neighbors}
+
+  end
+
+  def group_neighbors_into_polygons(
+        %Identicon{neighbors: neighbors} = input
+      ) do
+    polygons = PolygonReducer.group_into_polygons(neighbors)
 
     %{input | polygons: polygons}
   end
-
-  # def extract_polygons_both_layers(%Identicon{colors: %{bg: bg_color}} = input) do
-  #   fg_polygons = EdgeCleaner.extract_polygon_edges(input, layer: :fg)
-
-  #   bg_polygons =
-  #     case bg_color do
-  #       nil -> nil
-  #       _ -> EdgeCleaner.extract_polygon_edges(input, layer: :bg)
-  #     end
-
-  #   input
-  #   |> Map.put(
-  #     :layers,
-  #     %{fg: fg_polygons, bg: bg_polygons}
-  #   )
-  # end
 
   defp appropriate_hash(size) when size in 4..10 do
     hashes = %{
