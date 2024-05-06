@@ -9,13 +9,14 @@ defmodule IdenticonSvg.Identicon do
   @moduledoc since: "0.1.0"
   defstruct text: nil,
             size: 5,
+            bg_color: nil,
             padding: 0,
+            opacity: 1.0,
             grid: nil,
-            svg: nil,
-            colors: %{fg: nil, bg: nil},
-            layers: %{fg: nil, bg: nil},
-            squares: %{fg: nil, bg: nil},
-            fg: nil,
-            bg: nil,
-            opacity: 1.0
+            fg_color: nil,
+            squares: nil,
+            polygons: nil,
+            edges: nil,
+            layer: nil,
+            svg: nil
 end

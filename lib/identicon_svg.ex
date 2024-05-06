@@ -2,7 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule IdenticonSvg do
-  alias IdenticonSvg.{Identicon, Color, Draw, PolygonHelper}
+  alias IdenticonSvg.{
+    Identicon,
+    Color,
+    Draw,
+    EdgeCleaner,
+    PolygonReducer
+  }
 
   @moduledoc """
   Main module of `IdenticonSvg` that contains all functions of the library.
@@ -104,64 +110,67 @@ defmodule IdenticonSvg do
       opacity: opacity,
       padding: padding
     }
-    |> Map.put(:colors, %{bg: bg_color, fg: nil})
+    |> Map.put(:bg_color, bg_color)
     |> hash_input()
     |> extract_colors()
     |> square_grid()
-    |> mark_present_squares()
-    |> extract_polygons_both_layers()
-    |> generate_svg_both_layers()
-    |> output_svg()
+
+    |> extract_foreground_squares()
+    |> group_squares_into_polygons()
+
+    # |> convert_both_layers_into_edgelists()
+    # |> generate_svg()
+    # |> output_svg()
   end
 
-  def generate_svg_both_layers(%Identicon{} = input) do
-    fg = generate_svg_of_layer(input, layer: :fg)
-    bg = generate_svg_of_layer(input, layer: :bg)
-    svg = %{fg: fg, bg: bg}
+  def generate_svg(%Identicon{
+        polygons: polygons,
+        fg_color: fg_color,
+        opacity: opacity
+      } = input) do
+    svg =
+      polygons
+      |> Enum.map(&Draw.polygon_to_path_d(&1))
+      |> Enum.map(&Draw.svg_path_polygon(&1))
+      |> List.to_string()
+      |> Draw.svg_g(fg_color, opacity)
+
     %{input | svg: svg}
   end
 
-  def generate_svg_of_layer(%Identicon{layers: layers, colors: colors, opacity: opacity}, layer: layer) do
-    polygons = Map.get(layers, layer)
-    svg =
-    case polygons do
-      nil -> ""
-      _ ->
-        color = Map.get(colors, layer)
+  def convert_polygons_to_edges(%Identicon{polygons: polygons} = input) do
+    edges =
+      polygons
+      |> Enum.map(&EdgeCleaner.polygon_external_edges(&1, module_count(input)))
 
-        polygons
-        |> Enum.map(&Draw.polygon_to_path_d(&1))
-        |> Enum.map(&Draw.svg_path_polygon(&1))
-        |> List.to_string()
-        |> Draw.svg_g(color, opacity)
-    end
-
-    svg
+    %{input | edges: edges}
   end
 
-  def extract_polygons_both_layers(%Identicon{colors: %{bg: bg_color}} = input) do
-    fg_polygons = extract_polygon_edges(input, layer: :fg)
+  def group_squares_into_polygons(
+        %Identicon{squares: squares} = input
+      ) do
+    divisor = module_count(input)
 
-    bg_polygons =
-      case bg_color do
-        nil -> nil
-        _ -> extract_polygon_edges(input, layer: :bg)
-      end
+    polygons = PolygonReducer.group(squares, divisor)
 
-    input
-    |> Map.put(:layers,
-     %{fg: fg_polygons,
-       bg: bg_polygons}
-    )
+    %{input | polygons: polygons}
   end
 
-  def extract_polygon_edges(%Identicon{} = input, layer: layer) do
-    input
-    |> all_edges_of_all_rectangles(layer: layer)
-    |> Map.get(:squares)
-    |> Map.get(layer)
-    |> PolygonHelper.connect()
-  end
+  # def extract_polygons_both_layers(%Identicon{colors: %{bg: bg_color}} = input) do
+  #   fg_polygons = EdgeCleaner.extract_polygon_edges(input, layer: :fg)
+
+  #   bg_polygons =
+  #     case bg_color do
+  #       nil -> nil
+  #       _ -> EdgeCleaner.extract_polygon_edges(input, layer: :bg)
+  #     end
+
+  #   input
+  #   |> Map.put(
+  #     :layers,
+  #     %{fg: fg_polygons, bg: bg_polygons}
+  #   )
+  # end
 
   defp appropriate_hash(size) when size in 4..10 do
     hashes = %{
@@ -186,7 +195,7 @@ defmodule IdenticonSvg do
     %{input | grid: grid}
   end
 
-  def extract_colors(%Identicon{grid: grid, colors: %{bg: bg_color}} = input) do
+  def extract_colors(%Identicon{grid: grid, bg_color: bg_color} = input) do
     fg_color =
       grid
       |> Enum.chunk_every(3)
@@ -196,15 +205,11 @@ defmodule IdenticonSvg do
       |> String.downcase()
       |> String.pad_leading(7, "#")
 
-      bg_color = determine_background_color(fg_color, bg_color)
+    bg_color = determine_background_color(fg_color, bg_color)
 
-      input
-      |> Map.put(:colors,
-        %{
-          fg: fg_color,
-          bg: bg_color
-        }
-      )
+    input
+    |> Map.put(:fg_color, fg_color)
+    |> Map.put(:bg_color, bg_color)
   end
 
   def square_grid(%Identicon{grid: grid, size: size, padding: padding} = input) do
@@ -232,30 +237,34 @@ defmodule IdenticonSvg do
     %{input | grid: grid}
   end
 
-  def mark_present_squares(
-        %Identicon{grid: grid, size: size, padding: padding} = input
-      ) do
-    grid =
+  def extract_foreground_squares(%Identicon{grid: grid} = input) do
+    presence =
       grid
-      |> Enum.map(fn x -> 1 - rem(x, 2) end)
-      |> Enum.with_index()
-      |> Enum.map(fn {presence, index} ->
-        %{
-          index: index,
-          presence: presence
-        }
-        |> Map.merge(index_to_col_row(index, size + 2 * padding))
-      end)
+      |> Stream.map(fn x -> 1 - rem(x, 2) end)
+      |> Stream.with_index()
+      |> Stream.map(&Tuple.to_list/1)
+      |> Stream.map(&Enum.reverse/1)
+      |> Stream.map(&List.to_tuple/1)
+      |> Map.new()
 
-    fg = grid |> Enum.filter(&(Map.get(&1, :presence) == 1))
-    bg = grid -- fg
+    fg =
+      presence
+      |> Enum.filter(fn {_k, v} -> v == 1 end)
+      |> Map.new()
+      |> Map.keys()
 
     input
-    |> Map.put(:squares,
-    %{
-      fg: fg,
-      bg: bg}
+    |> Map.put(
+      :squares,
+      fg
     )
+  end
+
+  def keys_by_value(m, value) when is_map(m) do
+    m
+    |> Enum.filter(fn {_k, v} -> v == value end)
+    |> Map.new()
+    |> Map.keys()
   end
 
   def generate_coordinates(%Identicon{grid: grid} = input) do
@@ -273,14 +282,6 @@ defmodule IdenticonSvg do
       |> Enum.reverse()
 
     row ++ mirror
-  end
-
-  def index_to_coords(index, divisor)
-      when is_integer(index) and is_integer(divisor) do
-    %{
-      x: rem(index, divisor),
-      y: div(index, divisor)
-    }
   end
 
   defp determine_background_color(fg_color, bg_color)
@@ -301,90 +302,13 @@ defmodule IdenticonSvg do
     nil
   end
 
-  def output_svg(%Identicon{svg: svg, size: size, padding: padding}) do
-    pre = Draw.svg_preamble((size + padding * 2) * 20)
-    post = "</svg>"
+  def output_svg(%Identicon{svg: svg} = input) do
     content = svg |> Map.values() |> List.to_string()
 
-    pre <> content <> post
+    Draw.svg_preamble(module_count(input) * 20, content)
   end
 
   def module_count(%Identicon{size: size, padding: padding}) do
     size + 2 * padding
-  end
-
-  def point_equals({x1, y1}, {x2, y2}) do
-    x1 == x2 and y1 == y2
-  end
-
-  def index_to_col_row(index, divisor) do
-    col = rem(index, divisor)
-    row = div(index, divisor)
-
-    %{col: col, row: row}
-  end
-
-  def all_edges_of_rectangle(%{col: x0, row: y0}) do
-    x1 = x0 + 1
-    y1 = y0 + 1
-
-    vertices = [
-      {x0, y0},
-      {x1, y0},
-      {x1, y1},
-      {x0, y1}
-    ]
-
-    (vertices ++ [List.first(vertices)])
-    |> Enum.chunk_every(2, 1, :discard)
-  end
-
-  def all_edges_of_all_rectangles(%Identicon{squares: squares} = input, layer: layer) do
-    edges =
-      squares
-      |> Map.get(layer)
-      |> Enum.map(&all_edges_of_rectangle/1)
-      |> Enum.concat()
-      |> remove_duplicate_edges()
-
-    new_squares =
-      squares
-      |> Map.put(layer, edges)
-
-      input
-    |> Map.put(:squares, new_squares)
-  end
-
-  def remove_duplicate_edges(edges) do
-    remove_duplicate_edges(edges, [])
-  end
-
-  defp remove_duplicate_edges([], result), do: result
-
-  defp remove_duplicate_edges([edge | rest], result) do
-    case find_duplicate_edge(rest, edge) do
-      {j, _} ->
-        # Found a duplicate edge, remove both i and j
-        new_rest = List.delete_at(rest, j)
-        remove_duplicate_edges(new_rest, result)
-
-      _ ->
-        # No duplicate edge found, keep i
-        remove_duplicate_edges(rest, [edge | result])
-    end
-  end
-
-  defp find_duplicate_edge([], _), do: nil
-
-  defp find_duplicate_edge([edge | rest], target) do
-    if point_equals(List.first(target), List.last(edge)) &&
-         point_equals(List.last(target), List.first(edge)) do
-      {0, edge}
-    else
-      case find_duplicate_edge(rest, target) do
-        {j, a} -> {j + 1, a}
-        _ -> nil
-      end
-    end
   end
 end
