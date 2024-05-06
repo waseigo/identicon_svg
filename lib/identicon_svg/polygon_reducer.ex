@@ -9,11 +9,14 @@ defmodule IdenticonSvg.PolygonReducer do
 
   def group(neighbors_per_indexed_square) do
     g = fn x -> group_into_polygons(x) end
+
     Enum.reduce_while(
+      # the actual number doesn't matter, as long as it's not too low
       1..100,
       neighbors_per_indexed_square,
       fn _iteration, acc ->
         new_grouping = g.(acc)
+
         if new_grouping != acc do
           {:cont, new_grouping}
         else
@@ -21,6 +24,7 @@ defmodule IdenticonSvg.PolygonReducer do
         end
       end
     )
+    |> Map.values()
   end
 
   def group_into_polygons(neighbors_per_indexed_square)
@@ -29,22 +33,14 @@ defmodule IdenticonSvg.PolygonReducer do
     |> Enum.reduce(
       %{},
       fn {index, neighbors}, polygons ->
-      reducer({index, neighbors}, polygons)
-    end)
+        reducer({index, neighbors}, polygons)
+      end
+    )
     |> Enum.map(fn {k, v} -> {k, Enum.uniq(v)} end)
     |> Map.new()
   end
 
   def reducer({index, neighbors}, polygons) do
-    # IO.puts("\n---------------------------------------------------------------------------")
-
-
-    # IO.puts("\nStarting state:")
-    # IO.inspect(polygons, charlists: :as_chars)
-
-    # IO.puts("\nNow considering:")
-    # IO.inspect({index, neighbors}, charlists: :as_chars)
-
     not_seen_before =
       polygons
       |> Map.values()
@@ -77,8 +73,6 @@ defmodule IdenticonSvg.PolygonReducer do
   def disjoint?(a, b) when is_list(a) and is_list(b) do
     MapSet.disjoint?(MapSet.new(a), MapSet.new(b))
   end
-
-
 
   def index_to_col_row(index, divisor) do
     col = rem(index, divisor)

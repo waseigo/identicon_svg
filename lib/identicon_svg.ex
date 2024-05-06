@@ -108,27 +108,28 @@ defmodule IdenticonSvg do
       text: text,
       size: size,
       opacity: opacity,
-      padding: padding
+      padding: padding,
+      bg_color: bg_color
     }
-    |> Map.put(:bg_color, bg_color)
     |> hash_input()
     |> extract_colors()
     |> square_grid()
-
     |> extract_foreground_squares()
     |> find_neighboring_squares()
     |> group_neighbors_into_polygons()
+    |> convert_polygons_into_edgelists()
 
-    # |> convert_both_layers_into_edgelists()
     # |> generate_svg()
     # |> output_svg()
   end
 
-  def generate_svg(%Identicon{
-        polygons: polygons,
-        fg_color: fg_color,
-        opacity: opacity
-      } = input) do
+  def generate_svg(
+        %Identicon{
+          polygons: polygons,
+          fg_color: fg_color,
+          opacity: opacity
+        } = input
+      ) do
     svg =
       polygons
       |> Enum.map(&Draw.polygon_to_path_d(&1))
@@ -139,29 +140,26 @@ defmodule IdenticonSvg do
     %{input | svg: svg}
   end
 
-  def convert_polygons_to_edges(%Identicon{polygons: polygons} = input) do
+  def convert_polygons_into_edgelists(
+        %Identicon{polygons: polygons, size: size} = input
+      ) do
     edges =
       polygons
-      |> Enum.map(&EdgeCleaner.polygon_external_edges(&1, module_count(input)))
+      |> Enum.map(&EdgeCleaner.polygon_external_edges(&1, size))
 
     %{input | edges: edges}
   end
 
-  def find_neighboring_squares(%Identicon{squares: squares} = input) do
-    divisor = module_count(input)
-
+  def find_neighboring_squares(%Identicon{squares: squares, size: size} = input) do
     neighbors =
-    squares
-    |> PolygonReducer.neighbors_per_index(divisor)
+      squares
+      |> PolygonReducer.neighbors_per_index(size)
 
     %{input | neighbors: neighbors}
-
   end
 
-  def group_neighbors_into_polygons(
-        %Identicon{neighbors: neighbors} = input
-      ) do
-    polygons = PolygonReducer.group_into_polygons(neighbors)
+  def group_neighbors_into_polygons(%Identicon{neighbors: neighbors} = input) do
+    polygons = PolygonReducer.group(neighbors)
 
     %{input | polygons: polygons}
   end
@@ -206,26 +204,15 @@ defmodule IdenticonSvg do
     |> Map.put(:bg_color, bg_color)
   end
 
-  def square_grid(%Identicon{grid: grid, size: size, padding: padding} = input) do
+  def square_grid(%Identicon{grid: grid, size: size} = input) do
     odd = rem(size, 2)
     chunks = Integer.floor_div(size, 2) + odd
-
-    grid_max = Enum.max(grid)
-    padding_list_x = List.duplicate(grid_max, padding)
-
-    padding_list_y =
-      grid_max
-      |> List.duplicate(size + 2 * padding)
-      |> List.duplicate(padding)
 
     grid =
       grid
       |> Enum.chunk_every(chunks)
       |> Enum.slice(0, size)
-      |> Enum.map(&Kernel.++(padding_list_x, &1))
       |> Enum.map(&mirror_row(&1, odd))
-      |> then(&Kernel.++(padding_list_y, &1))
-      |> Kernel.++(padding_list_y)
       |> List.flatten()
 
     %{input | grid: grid}
@@ -296,13 +283,9 @@ defmodule IdenticonSvg do
     nil
   end
 
-  def output_svg(%Identicon{svg: svg} = input) do
+  def output_svg(%Identicon{svg: svg, size: size, padding: padding} = input) do
     content = svg |> Map.values() |> List.to_string()
 
-    Draw.svg_preamble(module_count(input) * 20, content)
-  end
-
-  def module_count(%Identicon{size: size, padding: padding}) do
-    size + 2 * padding
+    Draw.svg_preamble(size + 2 * padding, content)
   end
 end

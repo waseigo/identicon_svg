@@ -14,7 +14,8 @@ defmodule IdenticonSvg.EdgeCleaner do
     |> Enum.map(&edges_of_rectangle_with_index(&1, divisor))
     |> Enum.concat()
     |> remove_duplicate_edges()
-    |> EdgeTracer.connect()
+
+    #    |> EdgeTracer.connect()
   end
 
   def edges_of_rectangle_with_index(index, divisor) do
