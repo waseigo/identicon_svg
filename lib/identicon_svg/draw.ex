@@ -26,15 +26,15 @@ defmodule IdenticonSvg.Draw do
   EEx.function_from_string(
     :defp,
     :svg_preamble_template,
-    ~s(<svg version="1.1" width="20mm" height="20mm" viewBox="0 0 <%= length %> <%= length %>" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">\n),
-    [:length]
+    ~s(<svg version="1.1" width="20mm" height="20mm" viewBox="0 0 <%= length %> <%= length %>" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><%= content %></svg>),
+    [:length, :content]
   )
 
   @doc """
   Generate the preamble (opening `<svg>` tag with arguments) of the identicon SVG content.
   """
-  def svg_preamble(length) do
-    svg_preamble_template(length)
+  def svg_preamble(length, content) do
+    svg_preamble_template(length, content)
   end
 
   EEx.function_from_string(
