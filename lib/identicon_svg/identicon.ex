@@ -15,6 +15,7 @@ defmodule IdenticonSvg.Identicon do
             grid: nil,
             fg_color: nil,
             squares: nil,
+            neighbors: nil,
             polygons: nil,
             edges: nil,
             layer: nil,
