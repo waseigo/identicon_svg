@@ -17,3 +17,9 @@ paths = islands3 |> Map.get(:paths)
 pathset1 = hd(paths)
 
 [a, b, c, d] = pathset1
+
+edgelistset = pathset1 |> Enum.map(fn poly -> Enum.map(poly, fn edge -> hd(edge) end) end)
+
+[ap, bp, cp, dp] = edgelistset
+
+Pathfinder.pairwise_map(Enum.shuffle(edgelistset), fn x, y -> Sunday.simple_polygons_relation(x, y) end) |> Map.new |> Map.filter(&(:inside not in elem(&1,1))) |> Enum.sort_by(fn {k, v} -> Enum.count(v, &(&1 == :outside)) end, :desc) |> hd() |> elem(0)

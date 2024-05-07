@@ -12,7 +12,37 @@ defmodule IdenticonSvg.Pathfinder do
   # the paths of a pathset so that the polygon can be traced with a single uninterrupted
   # line that will get turned into an SVG <path> element.
 
+  alias IdenticonSvg.Sunday
+
   def doit(pathset) when is_list(pathset) do
+  end
+
+  def get_outer_hull(pathset) when is_list(pathset) do
+    case pathset do
+      [just_one_path] -> just_one_path
+      _ -> identify_container(pathset)
+    end
+  end
+
+  def identify_container(pathset) when is_list(pathset) do
+    pathset_map =
+      pathset
+      |> Enum.map(&{edgelist_to_points(&1), &1})
+      |> Map.new()
+
+    pathset_vertices = Map.keys(pathset_map)
+
+    pathset_vertices
+  end
+
+  def pairwise_map(list, fun) do
+    Enum.reduce(list, {[], []}, fn (x, {acc_values, acc_results}) ->
+      new_values = [x | acc_values]
+      new_results = [{x, Enum.map(acc_values, &fun.(x, &1))} | acc_results]
+      {new_values, new_results}
+    end)
+    |> elem(1)
+    #|> Enum.reverse()
   end
 
   def connect(polygon_edges)
@@ -226,6 +256,10 @@ defmodule IdenticonSvg.Pathfinder do
     |> Enum.reverse()
     |> tl()
     |> Enum.reverse()
+  end
+
+  def edgelist_to_points(edgelist) when is_list(edgelist) do
+    Enum.map(edgelist, &hd(&1))
   end
 
   def sum_of_edge_points(path) when is_list(path) do
