@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 Isaak Tsalicoglou <isaak@overbring.com>
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule IdenticonSvg.Sunday do
   # Source: https://web.archive.org/web/20130126163405/http://geomalgorithms.com/a03-_inclusion.html
 

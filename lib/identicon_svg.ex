@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Isaak Tsalicoglou <isaak@overbring.com>
+# SPDX-FileCopyrightText: 2024 Isaak Tsalicoglou <isaak@overbring.com>
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule IdenticonSvg do

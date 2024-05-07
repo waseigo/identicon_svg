@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 Isaak Tsalicoglou <isaak@overbring.com>
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule IdenticonSvg.Pathfinder do
   # pathset is an element of an %Identicon{}'s :paths list and represents a set of paths
   # of a traced polygon. When an incoming pathset (prior to any processing by Pathfinder)
