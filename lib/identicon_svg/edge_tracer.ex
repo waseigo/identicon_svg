@@ -64,16 +64,16 @@ defmodule IdenticonSvg.EdgeTracer do
         cm
         |> connect_edges()
         |> Enum.map(fn mp -> midpoint_to_unoriented_edge(mp) end)
-        |> Enum.reverse()
+        |> trace_edges()
 
-      Enum.reduce(
-        tl(dt),
-        [hd(dt)],
-        fn x, acc ->
-          [direct(x, hd(acc)) | acc]
-        end
-      )
-      |> Enum.reverse()
+      # Enum.reduce(
+      #   tl(dt),
+      #   [hd(dt)],
+      #   fn x, acc ->
+      #     [direct(x, hd(acc)) | acc]
+      #   end
+      # )
+      # |> Enum.reverse()
     end)
   end
 
