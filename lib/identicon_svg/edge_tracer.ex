@@ -205,7 +205,8 @@ defmodule IdenticonSvg.EdgeTracer do
   end
 
   # rotate `list` so that the element with value `target_head` is at its head
-  def rotate([h | t], target_head) when h != target_head do
+  def rotate([h | t], target_head)
+      when not is_list(target_head) and h != target_head do
     rotate(t ++ [h], target_head)
   end
 
