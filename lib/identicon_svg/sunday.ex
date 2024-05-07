@@ -35,18 +35,38 @@ defmodule IdenticonSvg.Sunday do
 
     vertices_rot1 = tl(vertices_pm) ++ [hd(vertices_pm)]
 
-    winding_number =
-      Enum.zip(vertices_pm, vertices_rot1)
-      |> Enum.reduce(
-        0,
-        fn {v_i, v_next}, wn ->
-          wn_pnpoly_reducer(p, {v_i, v_next}, wn)
-        end
-      )
+    Enum.zip(vertices_pm, vertices_rot1)
+    |> Enum.reduce(
+      0,
+      fn {v_i, v_next}, wn ->
+        wn_pnpoly_reducer(p, {v_i, v_next}, wn)
+      end
+    )
+  end
+
+  def point_relation_to_simple_polygon(point, vertices)
+      when is_tuple(point) and is_list(vertices) do
+    winding_number = wn_pnpoly(point, vertices)
 
     case winding_number do
       0 -> :outside
       _ -> :inside
+    end
+  end
+
+  def simple_polygons_relation(vertices1, vertices2)
+      when is_list(vertices1) and is_list(vertices2) do
+    relations =
+      vertices1
+      |> Enum.map(&wn_pnpoly(&1, vertices2))
+      |> Enum.uniq()
+
+    case relations do
+      # vertices1 envelops vertices2
+      [0] -> :outside
+      # vertices2 envelops vertices1
+      [1] -> :inside
+      _ -> :intersect
     end
   end
 
@@ -65,7 +85,7 @@ defmodule IdenticonSvg.Sunday do
     do: v_next.y > p.y and is_left(v_i, v_next, p) > 0
 
   defp check_c(v_i, v_next, p),
-    do: v_next.y <= p.y and is_left(v_i, v_next, p) < 0
+    do: v_next.y <= p.y and is_left(v_i, v_next, p) <= 0
 
   def coords_to_pointmap({px, py} = _point) do
     %{x: px, y: py}
