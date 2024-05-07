@@ -211,4 +211,41 @@ defmodule IdenticonSvg.EdgeTracer do
     |> tl()
     |> Enum.reverse()
   end
+
+  def edge_orientation_by_midpoint({mpx, mpy} = _midpoint) do
+    rmpx = round(mpx) == mpx
+    rmpy = round(mpy) == mpy
+
+    case [rmpx, rmpy] do
+      [true, false] -> :vertical
+      [false, true] -> :horizontal
+      [_, _] -> :undefined
+    end
+  end
+
+  def edge_neighbors_by_midpoint({mpx, mpy} = midpoint) do
+    case edge_orientation_by_midpoint(midpoint) do
+      :horizontal ->
+        [
+          [1.0, 0.0],
+          [0.5, -0.5],
+          [-1.0, 0.0],
+          [-0.5, -0.5],
+          [-0.5, 0.5],
+          [0.5, 0.5]
+        ]
+        |> Enum.map(&point_plus_vector(midpoint, &1))
+
+      :vertical ->
+        [
+          [-0.5, 0.5],
+          [0.0, 1.0],
+          [0.5, 0.5],
+          [0.5, -0.5],
+          [0.0, -1.0],
+          [-0.5, -0.5]
+        ]
+        |> Enum.map(&point_plus_vector(midpoint, &1))
+    end
+  end
 end
