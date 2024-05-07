@@ -17,6 +17,7 @@ defmodule IdenticonSvg.Identicon do
             squares: nil,
             neighbors: nil,
             polygons: nil,
+            paths: nil,
             edges: nil,
             layer: nil,
             svg: nil
