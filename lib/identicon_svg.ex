@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule IdenticonSvg do
+  alias IdenticonSvg.EdgeTracer
+
   alias IdenticonSvg.{
     Identicon,
     Color,
@@ -118,6 +120,7 @@ defmodule IdenticonSvg do
     |> find_neighboring_squares()
     |> group_neighbors_into_polygons()
     |> convert_polygons_into_edgelists()
+    |> trace_polygon_edges_to_paths()
 
     # |> generate_svg()
     # |> output_svg()
@@ -138,6 +141,12 @@ defmodule IdenticonSvg do
       |> Draw.svg_g(fg_color, opacity)
 
     %{input | svg: svg}
+  end
+
+  def trace_polygon_edges_to_paths(%Identicon{edges: edges} = input) do
+    paths = EdgeTracer.doit(edges)
+
+    %{input | paths: paths}
   end
 
   def convert_polygons_into_edgelists(
