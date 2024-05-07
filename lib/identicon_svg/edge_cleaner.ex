@@ -7,7 +7,7 @@ defmodule IdenticonSvg.EdgeCleaner do
   """
   @moduledoc since: "1.0.0"
 
-  alias IdenticonSvg.{EdgeTracer, PolygonReducer}
+  alias IdenticonSvg.{PolygonReducer}
 
   def polygon_external_edges(polygon, divisor) do
     polygon
