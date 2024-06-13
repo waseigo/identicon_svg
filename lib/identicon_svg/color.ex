@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule IdenticonSvg.Color do
-  require EEx
-
   @moduledoc """
   Module of `IdenticonSvg` that contains functions related to handling colors.
   """
