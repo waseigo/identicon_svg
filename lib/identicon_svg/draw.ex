@@ -11,81 +11,145 @@ defmodule IdenticonSvg.Draw do
 
   EEx.function_from_string(
     :defp,
-    :svg_g_template,
-    ~s(  <g style="stroke: <%= color %>; stroke-width: 0; stroke-opacity: <%= opacity %>; fill: <%= color %>; fill-opacity: <%= opacity %>;">\n<%= content %>  </g>\n),
-    [:content, :color, :opacity]
+    :svg_template_container,
+    ~s(<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" viewBox="<%= viewbox %>" height="10mm" width="10mm" version="1.2"><%= content %></svg>),
+    [:viewbox, :content]
   )
-
-  @doc """
-  Generate an SVG group with styling.
-  """
-  def svg_g(content, color, opacity) do
-    svg_g_template(content, color, opacity)
-  end
 
   EEx.function_from_string(
     :defp,
-    :svg_preamble_template,
-    ~s(<svg version="1.1" width="20mm" height="20mm" viewBox="0 0 <%= length %> <%= length %>" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><%= content %></svg>),
-    [:length, :content]
+    :svg_template_fgpath,
+    ~s(<path style="fill:<%= fg_color %>;fill-opacity:<%= opacity %>;" d="<%= pathd %>"/>),
+    [:fg_color, :opacity, :pathd]
   )
-
-  @doc """
-  Generate the preamble (opening `<svg>` tag with arguments) of the identicon SVG content.
-  """
-  def svg_preamble(length, content) do
-    svg_preamble_template(length, content)
-  end
 
   EEx.function_from_string(
     :defp,
-    :svg_path_template,
-    ~s(    <path d="<%= path_d %>"/>\n),
-    [:path_d]
+    :svg_template_defsmask,
+    ~s(<defs><mask maskContentUnits="userSpaceOnUse" id="a"><%= content %></mask></defs>),
+    [:content]
   )
 
-  @doc """
-  Convert a list of path coordinates to an SVG path attribute `d`.
-  """
-  def path_coords_to_string([moveto | linetos] = coords) when is_list(coords) do
-    moveto = ["M" | moveto]
+  EEx.function_from_string(
+    :defp,
+    :svg_template_innerpaths,
+    ~s(<path style="fill-opacity:<%= opacity %>;fill:#fff;" d="<%= viewbox_pathd %>"/><path style="fill-opacity:1;" d="<%= pathd %>"/>),
+    [:opacity, :viewbox_pathd, :pathd]
+  )
 
-    linetos =
-      linetos
-      |> Enum.map(fn lineto ->
-        ["L" | lineto]
-      end)
+  EEx.function_from_string(
+    :defp,
+    :svg_template_maskpath,
+    ~s(<path mask="url\(#a\)" style="fill-opacity:1; fill:<%= bg_color %>;" d="<%= viewbox_pathd %>"/>),
+    [:bg_color, :viewbox_pathd]
+  )
 
-    [moveto, linetos, "z"]
-    |> List.flatten()
-    |> Enum.join(" ")
+  def gen_viewbox(size, padding)
+      when is_integer(size) and is_integer(padding) do
+    vbmn = -padding
+    vbw = size + 2 * padding
+    vbmx = size + padding
+
+    vbs =
+      [vbmn, vbmn, vbw, vbw]
+    |> Enum.map(&to_string/1)
+    |> Enum.intersperse(" ")
+    |> to_string()
+
+    vbpd = path_to_pathd_fragment(
+      [
+        [{vbmn, vbmn}, {vbmn, vbmx}],
+        [{vbmn, vbmx}, {vbmx, vbmx}],
+        [{vbmx, vbmx}, {vbmx, vbmn}],
+        [{vbmx, vbmn}, {vbmn, vbmn}]
+      ]
+    )
+
+    %{
+      preamble: vbs,
+      pathd: vbpd
+    }
   end
 
   @doc """
-  Generate an SVG path.
+  Compose the SVG content out of the templates.
   """
-  def svg_path_polygon(path_d) do
-    svg_path_template(path_d)
+  def svg(paths, size, padding, fg_color, bg_color, opacity) do
+
+    %{preamble: viewbox, pathd: viewbox_pathd} = gen_viewbox(size, padding)
+
+    maskpath = svg_template_maskpath(bg_color, viewbox_pathd)
+
+    pathd =
+      paths
+    |> Enum.map(&path_to_pathd_fragment/1)
+    |> to_string()
+
+    opacity = to_string(opacity)
+    innerpaths = svg_template_innerpaths(opacity, viewbox_pathd, pathd)
+
+    defsmask = svg_template_defsmask(innerpaths)
+
+    fgpath = svg_template_fgpath(fg_color, opacity, pathd)
+
+    if is_nil(bg_color) do
+    svg_template_container(
+      viewbox,
+      fgpath
+    )
+    else
+      svg_template_container(
+        viewbox,
+        fgpath <> defsmask <> maskpath
+      )
+    end
+
   end
 
-  @doc """
-  Convert an polygon (list of edges in sequence) to the `d` attribute string of an SVG path.
-  """
-  def polygon_to_path_d(polygon, scale \\ 20)
-      when is_integer(scale) and is_list(polygon) do
-    polygon
-    |> List.flatten()
-    |> Enum.uniq()
-    |> scale_coords(scale)
-    |> path_coords_to_string()
+
+  def path_to_pathd_fragment(path) when is_list(path) do
+    path
+    |> path_to_xyhv()
+    |> xyhv_to_pathd_fragment()
   end
 
-  def scale_coords(coords, scale \\ 20)
-      when is_list(coords) and is_integer(scale) do
-    coords
+  def xyhv_to_pathd_fragment([x, y, h, v]) do
+    s =
+      Enum.map(
+        [x, y, h, v, -h, ""],
+        &to_string/1
+      )
+
+    ["M", " ", "h", "v", "h", "z"]
+    |> Enum.zip(s)
     |> Enum.map(&Tuple.to_list/1)
     |> List.flatten()
-    |> Enum.map(&Kernel.*(&1, scale))
-    |> Enum.chunk_every(2)
+    |> to_string
+  end
+
+  def path_to_xyhv(path) when is_list(path) do
+    vertices = List.flatten(path)
+
+    {xs, ys} =
+      vertices
+      |> Enum.reduce(
+        {[], []},
+        fn {x, y}, acc ->
+          {[x | elem(acc, 0)], [y | elem(acc, 1)]}
+        end
+      )
+
+    [{xmn, xmx}, {ymn, ymx}] = Enum.map([xs, ys], &mnmx/1)
+
+    [
+      xmn,
+      ymn,
+      xmx - xmn,
+      ymx - ymn
+    ]
+  end
+
+  defp mnmx(values) when is_list(values) do
+    {Enum.min(values), Enum.max(values)}
   end
 end
