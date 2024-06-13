@@ -41,7 +41,7 @@ defmodule IdenticonSvg do
   Setting `bg_color` to `nil` (default value) generates only the foreground (colored) squares,
   with the default (1.0) or requested `opacity`.
 
-  _New since v0.9.0:_ Setting `padding` to a positive integer sets the padding to the identicon to that value. If `bg_color` is non-nil, it will also be applied to the padding area with the with the default (1.0) or requested `opacity`, which is applied the same on the foreground and the background.
+  _New since v0.9.0:_ Setting `padding` to a positive integer sets the padding to the identicon to that value. If `bg_color` is non-nil, it will also be applied to the padding area with the with the default (1.0) or requested `opacity`, which is applied the same on the foreground and the background. The file size is greatly reduced.
 
   _New since v0.8.0:_ Setting `bg_color` to one of the following 3 atom values sets the color of the background squares to the corresponding RGB-complementary color of the automatically-defined foreground color, with the default (1.0) or requested `opacity`:
   * `:basic`: the complementary color, i.e. the opposite color of `fg_color` on the color wheel.
@@ -80,6 +80,11 @@ defmodule IdenticonSvg do
   ```
   ![6x6 identicon for "pineapple", at full opacity, with transparent background](assets/pineapple_6x6_nil_1p0.svg)
 
+  7x7 identicon with padding 1, complementary background color, and 70% opacity:
+  ```elixir
+  generate("overbring.com", 7, :basic, 0.7, 1)
+  ```
+  ![7x7 identicon for "overbring.com" with padding 1, complementary background color, and 70% opacity](assets/overbring.com_7x7_basic_0p7_pad1.svg)
 
   7x7 identicon with blue (`#33f`) background:
   ```elixir

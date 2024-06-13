@@ -5,25 +5,26 @@ defmodule IdenticonSvg.EdgeCleaner do
   @moduledoc """
   Module incorporating functions that remove internal edges shared between squares grouped into a polygon.
   """
-  @moduledoc since: "1.0.0"
+  @moduledoc since: "0.9.0"
 
-  alias IdenticonSvg.{PolygonReducer}
+  alias IdenticonSvg.PolygonReducer
 
+  @doc """
+  Identify the external edges of a polygon.
+  """
   def polygon_external_edges(polygon, divisor) do
     polygon
     |> Enum.map(&edges_of_rectangle_with_index(&1, divisor))
     |> Enum.concat()
     |> remove_duplicate_edges()
-
-    #    |> EdgeTracer.connect()
   end
 
-  def edges_of_rectangle_with_index(index, divisor) do
+  defp edges_of_rectangle_with_index(index, divisor) do
     [x0, y0] = PolygonReducer.index_to_col_row(index, divisor)
     all_edges_of_rectangle({x0, y0})
   end
 
-  def all_edges_of_rectangle({x0, y0}) do
+  defp all_edges_of_rectangle({x0, y0}) do
     x1 = x0 + 1
     y1 = y0 + 1
 
@@ -38,7 +39,7 @@ defmodule IdenticonSvg.EdgeCleaner do
     |> Enum.chunk_every(2, 1, :discard)
   end
 
-  def remove_duplicate_edges(edges) do
+  defp remove_duplicate_edges(edges) do
     edges
     |> Enum.map(&MapSet.new/1)
     |> Enum.frequencies()

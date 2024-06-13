@@ -5,9 +5,11 @@ defmodule IdenticonSvg.Draw do
   require EEx
 
   @moduledoc """
-  Module of `IdenticonSvg` that contains functions related to drawing SVG elements.
+  Module of `IdenticonSvg` that contains functions related to drawing SVG elements and composing the SVG output of the requested identicon.
   """
   @moduledoc since: "0.9.0"
+
+  # EEx templating functions for string interpolation and for composing the SVG content.
 
   EEx.function_from_string(
     :defp,
@@ -44,8 +46,10 @@ defmodule IdenticonSvg.Draw do
     [:bg_color, :viewbox_pathd]
   )
 
-  def gen_viewbox(size, padding)
-      when is_integer(size) and is_integer(padding) do
+  # Generate the SVG attributes for the viewbox in the preamble and the background mask.
+
+  defp gen_viewbox(size, padding)
+       when is_integer(size) and is_integer(padding) do
     vbmn = -padding
     vbw = size + 2 * padding
     vbmx = size + padding
@@ -71,7 +75,14 @@ defmodule IdenticonSvg.Draw do
   end
 
   @doc """
-  Compose the SVG content out of the templates.
+  Compose the SVG content out of the templates and return a string.
+
+  Arguments (all mandatory):
+  * `paths`: the `:paths` field of the `%Identicon{}` struct, i.e. single-height polygon "strips" across the mirroring axis after neighbor detection.
+  * `size`: the size of the identicon without padding.
+  * `padding`: the requested padding (positive or zero integer).
+  * `fg_color` and `bg_color`: foreground and background color hex strings.
+  * `opacity`: requested opacity (0.0 to 1.0).
   """
   def svg(paths, size, padding, fg_color, bg_color, opacity) do
     %{preamble: viewbox, pathd: viewbox_pathd} = gen_viewbox(size, padding)
@@ -103,13 +114,15 @@ defmodule IdenticonSvg.Draw do
     end
   end
 
-  def path_to_pathd_fragment(path) when is_list(path) do
+  # Convert a path (of the `%Identicon{}` struct's `:paths` field) to a path fragment that ends up being part of the `d` attribute of an SVG `<path>`.
+  defp path_to_pathd_fragment(path) when is_list(path) do
     path
     |> path_to_xyhv()
     |> xyhv_to_pathd_fragment()
   end
 
-  def xyhv_to_pathd_fragment([x, y, h, v]) do
+  # Convert a rectangle defined by its reference corner coordinates (`x` and `y`) and its horizontal and vertical span (`h` and `v`) into a path fragment that ends up being part of the `d` attribute of an SVG `<path>`.
+  defp xyhv_to_pathd_fragment([x, y, h, v]) do
     s =
       Enum.map(
         [x, y, h, v, -h, ""],
@@ -123,7 +136,8 @@ defmodule IdenticonSvg.Draw do
     |> to_string
   end
 
-  def path_to_xyhv(path) when is_list(path) do
+  # Convert a path (of the `%Identicon{}` struct's `:paths` field) to a rectangle defined by its reference corner coordinates (`x` and `y`) and its horizontal and vertical span (`h` and `v`).
+  defp path_to_xyhv(path) when is_list(path) do
     vertices = List.flatten(path)
 
     {xs, ys} =
