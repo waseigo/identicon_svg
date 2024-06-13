@@ -83,9 +83,9 @@ defmodule IdenticonSvg.PolygonReducer do
 
   def col_row_neighbors([col, row], divisor) do
     [
-      [col, row - 1],
+      # [col, row - 1],
       [col + 1, row],
-      [col, row + 1],
+      # [col, row + 1],
       [col - 1, row]
     ]
     |> Enum.filter(&within_bounds(&1, divisor))
