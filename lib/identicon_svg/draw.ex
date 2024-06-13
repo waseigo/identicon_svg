@@ -52,18 +52,17 @@ defmodule IdenticonSvg.Draw do
 
     vbs =
       [vbmn, vbmn, vbw, vbw]
-    |> Enum.map(&to_string/1)
-    |> Enum.intersperse(" ")
-    |> to_string()
+      |> Enum.map(&to_string/1)
+      |> Enum.intersperse(" ")
+      |> to_string()
 
-    vbpd = path_to_pathd_fragment(
-      [
+    vbpd =
+      path_to_pathd_fragment([
         [{vbmn, vbmn}, {vbmn, vbmx}],
         [{vbmn, vbmx}, {vbmx, vbmx}],
         [{vbmx, vbmx}, {vbmx, vbmn}],
         [{vbmx, vbmn}, {vbmn, vbmn}]
-      ]
-    )
+      ])
 
     %{
       preamble: vbs,
@@ -75,15 +74,14 @@ defmodule IdenticonSvg.Draw do
   Compose the SVG content out of the templates.
   """
   def svg(paths, size, padding, fg_color, bg_color, opacity) do
-
     %{preamble: viewbox, pathd: viewbox_pathd} = gen_viewbox(size, padding)
 
     maskpath = svg_template_maskpath(bg_color, viewbox_pathd)
 
     pathd =
       paths
-    |> Enum.map(&path_to_pathd_fragment/1)
-    |> to_string()
+      |> Enum.map(&path_to_pathd_fragment/1)
+      |> to_string()
 
     opacity = to_string(opacity)
     innerpaths = svg_template_innerpaths(opacity, viewbox_pathd, pathd)
@@ -93,19 +91,17 @@ defmodule IdenticonSvg.Draw do
     fgpath = svg_template_fgpath(fg_color, opacity, pathd)
 
     if is_nil(bg_color) do
-    svg_template_container(
-      viewbox,
-      fgpath
-    )
+      svg_template_container(
+        viewbox,
+        fgpath
+      )
     else
       svg_template_container(
         viewbox,
         fgpath <> defsmask <> maskpath
       )
     end
-
   end
-
 
   def path_to_pathd_fragment(path) when is_list(path) do
     path
