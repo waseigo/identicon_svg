@@ -4,7 +4,7 @@ defmodule IdenticonSvg.MixProject do
   def project do
     [
       app: :identicon_svg,
-      version: "0.8.0",
+      version: "0.9.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -27,7 +27,7 @@ defmodule IdenticonSvg.MixProject do
 
   defp description do
     """
-    An Elixir library to generate identicons in SVG format, so they can be inlined in HTML.
+    An Elixir library to generate Github-style identicons in SVG format with a small file size, so that they can be inlined in HTML.
     """
   end
 
@@ -43,7 +43,7 @@ defmodule IdenticonSvg.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: []
     ]
   end
 
