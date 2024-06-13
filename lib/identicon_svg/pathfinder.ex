@@ -14,7 +14,12 @@ defmodule IdenticonSvg.Pathfinder do
 
   alias IdenticonSvg.Sunday
 
-  def doit(pathset) when is_list(pathset) do
+  # paths is the :paths field of an %IdenticonSvg{} struct
+  def doit(paths) when is_list(paths) do
+    Enum.map(paths, &handle_paths_item/1)
+  end
+
+  def handle_paths_item(p) when is_list(p) do
   end
 
   def get_outer_hull(pathset) when is_list(pathset) do
@@ -36,13 +41,14 @@ defmodule IdenticonSvg.Pathfinder do
   end
 
   def pairwise_map(list, fun) do
-    Enum.reduce(list, {[], []}, fn (x, {acc_values, acc_results}) ->
+    Enum.reduce(list, {[], []}, fn x, {acc_values, acc_results} ->
       new_values = [x | acc_values]
       new_results = [{x, Enum.map(acc_values, &fun.(x, &1))} | acc_results]
       {new_values, new_results}
     end)
     |> elem(1)
-    #|> Enum.reverse()
+
+    # |> Enum.reverse()
   end
 
   def connect(polygon_edges)
