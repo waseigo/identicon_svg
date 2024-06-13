@@ -41,6 +41,8 @@ defmodule IdenticonSvg do
   Setting `bg_color` to `nil` (default value) generates only the foreground (colored) squares,
   with the default (1.0) or requested `opacity`.
 
+  _New since v0.9.0:_ Setting `padding` to a positive integer sets the padding to the identicon to that value. If `bg_color` is non-nil, it will also be applied to the padding area with the with the default (1.0) or requested `opacity`, which is applied the same on the foreground and the background.
+
   _New since v0.8.0:_ Setting `bg_color` to one of the following 3 atom values sets the color of the background squares to the corresponding RGB-complementary color of the automatically-defined foreground color, with the default (1.0) or requested `opacity`:
   * `:basic`: the complementary color, i.e. the opposite color of `fg_color` on the color wheel.
   * `:split1`: the first adjacent tertiary color of the complement of `fg_color` on the color wheel.
@@ -121,30 +123,34 @@ defmodule IdenticonSvg do
     |> group_neighbors_into_polygons()
     |> convert_polygons_into_edgelists()
     |> trace_polygon_edges_to_paths()
+    |> generate_svg()
+    |> return_svg()
+  end
 
-    # |> generate_svg()
-    # |> output_svg()
+  def return_svg(%Identicon{svg: svg}) when is_bitstring(svg) do
+    svg
   end
 
   def generate_svg(
         %Identicon{
-          polygons: polygons,
+          paths: paths,
+          size: size,
+          padding: padding,
           fg_color: fg_color,
+          bg_color: bg_color,
           opacity: opacity
         } = input
       ) do
-    svg =
-      polygons
-      |> Enum.map(&Draw.polygon_to_path_d(&1))
-      |> Enum.map(&Draw.svg_path_polygon(&1))
-      |> List.to_string()
-      |> Draw.svg_g(fg_color, opacity)
+    svg = Draw.svg(paths, size, padding, fg_color, bg_color, opacity)
 
     %{input | svg: svg}
   end
 
   def trace_polygon_edges_to_paths(%Identicon{edges: edges} = input) do
-    paths = EdgeTracer.doit(edges)
+    paths =
+      edges
+      |> EdgeTracer.doit()
+      |> Enum.map(&hd/1)
 
     %{input | paths: paths}
   end
@@ -290,11 +296,5 @@ defmodule IdenticonSvg do
 
   defp determine_background_color(_fg_color, bg_color) when is_nil(bg_color) do
     nil
-  end
-
-  def output_svg(%Identicon{svg: svg, size: size, padding: padding} = input) do
-    content = svg |> Map.values() |> List.to_string()
-
-    Draw.svg_preamble(size + 2 * padding, content)
   end
 end
