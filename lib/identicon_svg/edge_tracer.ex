@@ -412,8 +412,8 @@ defmodule IdenticonSvg.EdgeTracer do
       tl(routed),
       [hd(routed)],
       fn edge, traces ->
-        IO.inspect(traces)
-        IO.puts("\n")
+        # IO.inspect(traces)
+        # IO.puts("\n")
         [direct(edge, hd(traces)) | traces]
       end
     )
