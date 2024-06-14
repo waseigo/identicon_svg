@@ -4,7 +4,7 @@ defmodule IdenticonSvg.MixProject do
   def project do
     [
       app: :identicon_svg,
-      version: "0.9.0",
+      version: "0.9.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -43,7 +43,7 @@ defmodule IdenticonSvg.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: []
+      extra_applications: [:logger, :crypto, :eex]
     ]
   end
 

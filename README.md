@@ -21,7 +21,7 @@ The package is [available in Hex](https://hex.pm/packages/identicon_svg) and can
 ```elixir
 def deps do
   [
-    {:identicon_svg, "~> 0.9.0"}
+    {:identicon_svg, "~> 0.9.1"}
   ]
 end
 ```
