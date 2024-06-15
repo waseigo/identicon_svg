@@ -14,7 +14,7 @@ defmodule IdenticonSvg.Draw do
   EEx.function_from_string(
     :defp,
     :svg_template_container,
-    ~s(<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" viewBox="<%= viewbox %>" height="10mm" width="10mm" version="1.2"><%= content %></svg>),
+    ~s(<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" viewBox="<%= viewbox %>" height="100%" width="100%" version="1.2"><%= content %></svg>),
     [:viewbox, :content]
   )
 
