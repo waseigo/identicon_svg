@@ -28,8 +28,8 @@ defmodule IdenticonSvg.Draw do
   EEx.function_from_string(
     :defp,
     :svg_template_defsmask,
-    ~s(<defs><mask maskContentUnits="userSpaceOnUse" id="a"><%= content %></mask></defs>),
-    [:content]
+    ~s(<defs><mask maskContentUnits="userSpaceOnUse" id="<%= mask_id %>"><%= content %></mask></defs>),
+    [:content, :mask_id]
   )
 
   EEx.function_from_string(
@@ -42,8 +42,8 @@ defmodule IdenticonSvg.Draw do
   EEx.function_from_string(
     :defp,
     :svg_template_maskpath,
-    ~s(<path mask="url\(#a\)" style="fill-opacity:1; fill:<%= bg_color %>;" d="<%= viewbox_pathd %>"/>),
-    [:bg_color, :viewbox_pathd]
+    ~s(<path mask="url\(#<%= mask_id %>\)" style="fill-opacity:1; fill:<%= bg_color %>;" d="<%= viewbox_pathd %>"/>),
+    [:bg_color, :viewbox_pathd, :mask_id]
   )
 
   # Generate the SVG attributes for the viewbox in the preamble and the background mask.
@@ -87,7 +87,9 @@ defmodule IdenticonSvg.Draw do
   def svg(paths, size, padding, fg_color, bg_color, opacity) do
     %{preamble: viewbox, pathd: viewbox_pathd} = gen_viewbox(size, padding)
 
-    maskpath = svg_template_maskpath(bg_color, viewbox_pathd)
+    mask_id = gen_random_string()
+
+    maskpath = svg_template_maskpath(bg_color, viewbox_pathd, mask_id)
 
     pathd =
       paths
@@ -97,7 +99,7 @@ defmodule IdenticonSvg.Draw do
     opacity = to_string(opacity)
     innerpaths = svg_template_innerpaths(opacity, viewbox_pathd, pathd)
 
-    defsmask = svg_template_defsmask(innerpaths)
+    defsmask = svg_template_defsmask(innerpaths, mask_id)
 
     fgpath = svg_template_fgpath(fg_color, opacity, pathd)
 
@@ -112,6 +114,10 @@ defmodule IdenticonSvg.Draw do
         fgpath <> defsmask <> maskpath
       )
     end
+  end
+
+  defp gen_random_string(len \\ 10) when is_integer(len) and len > 0 do
+    for _ <- 1..len, into: "", do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz')>>
   end
 
   # Convert a path (of the `%Identicon{}` struct's `:paths` field) to a path fragment that ends up being part of the `d` attribute of an SVG `<path>`.
