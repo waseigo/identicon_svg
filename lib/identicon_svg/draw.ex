@@ -20,6 +20,13 @@ defmodule IdenticonSvg.Draw do
 
   EEx.function_from_string(
     :defp,
+    :g_template_container,
+    ~s|<g transform="translate(<%= padding %>,<%= padding %>)"><%= content %></g>|,
+    [:padding, :content]
+  )
+
+  EEx.function_from_string(
+    :defp,
     :svg_template_fgpath,
     ~s(<path style="fill:<%= fg_color %>;fill-opacity:<%= opacity %>;" d="<%= pathd %>"/>),
     [:fg_color, :opacity, :pathd]
@@ -84,11 +91,18 @@ defmodule IdenticonSvg.Draw do
   * `fg_color` and `bg_color`: foreground and background color hex strings.
   * `opacity`: requested opacity (0.0 to 1.0).
   """
-  def svg(paths, size, padding, fg_color, bg_color, opacity) do
+  def svg(
+        paths,
+        size,
+        padding,
+        fg_color,
+        bg_color,
+        opacity,
+        opts \\ [only_group: false, curvature: 0.8]
+      ) do
     %{preamble: viewbox, pathd: viewbox_pathd} = gen_viewbox(size, padding)
 
     mask_id = gen_random_string()
-
     maskpath = svg_template_maskpath(bg_color, viewbox_pathd, mask_id)
 
     pathd =
@@ -98,26 +112,27 @@ defmodule IdenticonSvg.Draw do
 
     opacity = to_string(opacity)
     innerpaths = svg_template_innerpaths(opacity, viewbox_pathd, pathd)
-
     defsmask = svg_template_defsmask(innerpaths, mask_id)
-
     fgpath = svg_template_fgpath(fg_color, opacity, pathd)
 
-    if is_nil(bg_color) do
-      svg_template_container(
-        viewbox,
-        fgpath
-      )
+    only_group? = Keyword.get(opts, :only_group)
+
+    content = (is_nil(bg_color) && fgpath) || fgpath <> defsmask <> maskpath
+
+    if only_group? do
+      curvature = Keyword.get(opts, :curvature)
+
+      g_template_container(padding, content)
+      |> Squircle.svg_group(size + 2 * padding, 0, curvature)
     else
-      svg_template_container(
-        viewbox,
-        fgpath <> defsmask <> maskpath
-      )
+      svg_template_container(viewbox, content)
     end
   end
 
   defp gen_random_string(len \\ 10) when is_integer(len) and len > 0 do
-    for _ <- 1..len, into: "", do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz')>>
+    for _ <- 1..len,
+        into: "",
+        do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz')>>
   end
 
   # Convert a path (of the `%Identicon{}` struct's `:paths` field) to a path fragment that ends up being part of the `d` attribute of an SVG `<path>`.

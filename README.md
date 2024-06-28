@@ -21,7 +21,7 @@ The package is [available in Hex](https://hex.pm/packages/identicon_svg) and can
 ```elixir
 def deps do
   [
-    {:identicon_svg, "~> 0.9.3"}
+    {:identicon_svg, "~> 0.9.4"}
   ]
 end
 ```
@@ -30,6 +30,7 @@ end
 
 ### New since v0.9.0
 
+- _(Since v0.9.4)_ Set the squircle curvature factor with the `:squircle_curvature` keyword option to a float to crop the identicon to a squircle.
 - _(Since v0.9.3)_ The mask id is now randomly generated to avoid clashes between multiple SVG identicons on the same page.
 - Setting `padding` to a positive integer sets the padding to the identicon to that value. If `bg_color` is non-nil, it will also be applied to the padding area with the with the default (1.0) or requested `opacity`, which is also applied on the foreground and the background.
 - The size of the generated SVG code is greatly reduced.

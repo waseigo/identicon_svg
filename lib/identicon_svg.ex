@@ -41,7 +41,7 @@ defmodule IdenticonSvg do
   Setting `bg_color` to `nil` (default value) generates only the foreground (colored) squares,
   with the default (1.0) or requested `opacity`.
 
-  _New since v0.9.0:_ Setting `padding` to a positive integer sets the padding to the identicon to that value. If `bg_color` is non-nil, it will also be applied to the padding area with the with the default (1.0) or requested `opacity`, which is applied the same on the foreground and the background. The file size is greatly reduced.
+  _New since v0.9.0:_ Setting `padding` to a positive integer sets the padding to the identicon to that value. If `bg_color` is non-nil, it will also be applied to the padding area with the with the default (1.0) or requested `opacity`, which is applied the same on the foreground and the background. The file size is greatly reduced. Set the squircle curvature factor with the `:squircle_curvature` keyword option to a float to crop the identicon to a squircle.
 
   _New since v0.8.0:_ Setting `bg_color` to one of the following 3 atom values sets the color of the background squares to the corresponding RGB-complementary color of the automatically-defined foreground color, with the default (1.0) or requested `opacity`:
   * `:basic`: the complementary color, i.e. the opposite color of `fg_color` on the color wheel.
@@ -92,7 +92,6 @@ defmodule IdenticonSvg do
   ```
   ![7x7 identicon for "refrigerator", at full opacity, with blue background](assets/refrigerator_7x7_33f_1p0.svg)
 
-
   9x9 identicon with transparent background and 50% opacity:
   ```elixir
   generate("2023-03-14", 9, nil, 0.5)
@@ -106,10 +105,27 @@ defmodule IdenticonSvg do
   ```
   ![10x10 identicon for "banana", at 80% opacity, with yellow background](assets/banana_10x10_ff0_0p8.svg)
 
+  10x10 identicon with split-1 background complementary color, with 3 squares of padding, at full opacity, cropped to a squircle with curvature factor 0.9:
+  ```elixir
+  generate("squircles!!", 10, :split2, 1.0, 3, squircle_curvature: 0.9)
+  ```
+  <img src="assets/squircles!!!_10x10_split2_1p0_pad3_squircle0p9.svg" width="100" />
 
+  5x5 identicon with basic background complementary color, with 2 squares of padding, at 40% opacity, cropped to a squircle with curvature factor 0.82:
+  ```elixir
+  generate("elixir", 5, :basic, 0.4, 2, squircle_curvature: 0.82)
+  ```
+  <img src="assets/elixir_5x5_basic_0p4_pad2_squircle0p82.svg" width="100" />
   """
 
-  def generate(text, size \\ 5, bg_color \\ nil, opacity \\ 1.0, padding \\ 0)
+  def generate(
+        text,
+        size \\ 5,
+        bg_color \\ nil,
+        opacity \\ 1.0,
+        padding \\ 0,
+        opts \\ [squircle_curvature: nil]
+      )
       when is_bitstring(text) and size in 4..10 and
              (is_bitstring(bg_color) or is_nil(bg_color) or is_atom(bg_color)) and
              is_float(opacity) and is_integer(padding) and padding >= 0 do
@@ -128,7 +144,7 @@ defmodule IdenticonSvg do
     |> group_neighbors_into_polygons()
     |> convert_polygons_into_edgelists()
     |> trace_polygon_edges_to_paths()
-    |> generate_svg()
+    |> generate_svg(opts)
     |> return_svg()
   end
 
@@ -144,9 +160,17 @@ defmodule IdenticonSvg do
           fg_color: fg_color,
           bg_color: bg_color,
           opacity: opacity
-        } = input
+        } = input,
+        opts
       ) do
-    svg = Draw.svg(paths, size, padding, fg_color, bg_color, opacity)
+    squircle_curvature = Keyword.get(opts, :squircle_curvature)
+    only_group? = !is_nil(squircle_curvature) and is_number(squircle_curvature)
+
+    svg =
+      Draw.svg(paths, size, padding, fg_color, bg_color, opacity,
+        only_group: only_group?,
+        curvature: squircle_curvature
+      )
 
     %{input | svg: svg}
   end
