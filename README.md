@@ -4,6 +4,8 @@
 
 An Elixir library to generate identicons in SVG format, so they can be inlined in HTML.
 
+[Demo](https://obidenticon.overbring.com/)
+
 ## Features
 
 - Github-style square identicon sizes from 4x4 to 10x10. The hashing function is automatically chosen based on the requested size. The foreground color choice is automatic based on the hash.
