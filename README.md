@@ -62,3 +62,7 @@ There's also a [discussion thread on elixirforum.com](https://elixirforum.com/t/
 - [x] Reduce generated SVG file size
 - [ ] Implement testing functions
 - [ ] Set up CI
+
+## Donate
+
+Has this library been useful for your project? [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V119L07A)
