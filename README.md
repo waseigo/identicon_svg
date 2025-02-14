@@ -65,4 +65,6 @@ There's also a [discussion thread on elixirforum.com](https://elixirforum.com/t/
 
 ## Donate
 
-Has this library been useful for your project? [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V119L07A)
+Has this library been useful for your project? 
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V119L07A)
