@@ -79,4 +79,48 @@ defmodule IdenticonSvg.Color do
         [255 - r, 255 - g, b]
     end
   end
+
+  @doc """
+  Helper function to darken a hexadecimal color value.
+
+  ## Parameters
+
+  * `hex` - The hexadecimal color string (e.g., "#ff0000")
+  * `amount` - The amount to darken (positive values) or lighten (negative values)
+
+  ## Examples
+
+      iex> darken("#ff0000", 30)
+      "#00E100"
+      
+      iex> darken("#00ff00", -30)
+      "#1E1EFF"
+      
+      iex> darken("#ffffff", 100)
+      "#9B9B9B"
+  """
+  def darken(hex, amount) do
+    "#" <>
+      (hex
+       |> Chameleon.convert(Chameleon.RGB)
+       |> Map.from_struct()
+       |> Map.values()
+       |> Enum.map(fn
+         x -> clamp(x - amount, 0, 255)
+       end)
+       |> then(fn [r, g, b] -> Chameleon.RGB.new(r, g, b) end)
+       |> Chameleon.convert(Chameleon.Hex)
+       |> Map.get(:hex))
+  end
+
+  defp clamp(value, min, max) do
+    min = if min < max, do: min, else: max
+    max = if min < max, do: max, else: min
+
+    if value < min do
+      min
+    else
+      if value > max, do: max, else: value
+    end
+  end
 end

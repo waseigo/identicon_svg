@@ -1,8 +1,6 @@
 defmodule IdenticonSvgTest do
   use ExUnit.Case
   doctest IdenticonSvg
-
-  test "greets the world" do
-    assert IdenticonSvg.hello() == :world
-  end
+  doctest IdenticonSvg.Identicon
+  doctest IdenticonSvg.Color, import: true
 end

@@ -52,6 +52,7 @@ defmodule IdenticonSvg.MixProject do
     [
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
+      {:chameleon, "~> 2.5"},
       {:squircle, "~> 0.1.1"}
     ]
   end
