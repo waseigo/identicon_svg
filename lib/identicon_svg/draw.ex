@@ -152,8 +152,7 @@ defmodule IdenticonSvg.Draw do
 
     ["M", " ", "h", "v", "h", "z"]
     |> Enum.zip(s)
-    |> Enum.map(&Tuple.to_list/1)
-    |> List.flatten()
+    |> Enum.flat_map(&Tuple.to_list/1)
     |> to_string()
   end
 

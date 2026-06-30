@@ -261,8 +261,7 @@ defmodule IdenticonSvg do
       grid
       |> Enum.chunk_every(chunks)
       |> Enum.slice(0, size)
-      |> Enum.map(&mirror_row(&1, odd))
-      |> List.flatten()
+      |> Enum.flat_map(&mirror_row(&1, odd))
 
     %{input | grid: grid}
   end

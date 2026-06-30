@@ -14,8 +14,7 @@ defmodule IdenticonSvg.EdgeCleaner do
   """
   def polygon_external_edges(polygon, divisor) do
     polygon
-    |> Enum.map(&edges_of_rectangle_with_index(&1, divisor))
-    |> Enum.concat()
+    |> Enum.flat_map(&edges_of_rectangle_with_index(&1, divisor))
     |> remove_duplicate_edges()
   end
 
