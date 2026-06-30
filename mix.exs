@@ -19,7 +19,7 @@ defmodule IdenticonSvg.MixProject do
         # The main page in the docs
         main: "IdenticonSvg",
         logo: "./assets/logo.png",
-        assets: "etc/assets",
+        assets: %{"etc/assets" => "etc/assets"},
         extras: ["README.md"]
       ]
     ]
@@ -33,7 +33,14 @@ defmodule IdenticonSvg.MixProject do
 
   defp package do
     [
-      files: ["lib/identicon_svg", "lib/identicon_svg.ex", "mix.exs", "README*", "CHANGELOG*", "LICENSE*"],
+      files: [
+        "lib/identicon_svg",
+        "lib/identicon_svg.ex",
+        "mix.exs",
+        "README*",
+        "CHANGELOG*",
+        "LICENSE*"
+      ],
       maintainers: ["Isaak Tsalicoglou"],
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/waseigo/identicon_svg"}
