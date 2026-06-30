@@ -117,7 +117,7 @@ defmodule IdenticonSvg.Draw do
 
     only_group? = Keyword.get(opts, :only_group)
 
-    content = (is_nil(bg_color) && fgpath) || fgpath <> defsmask <> maskpath
+    content = if is_nil(bg_color), do: fgpath, else: fgpath <> defsmask <> maskpath
 
     if only_group? do
       curvature = Keyword.get(opts, :curvature)

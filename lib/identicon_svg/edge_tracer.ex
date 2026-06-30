@@ -211,10 +211,6 @@ defmodule IdenticonSvg.EdgeTracer do
     }
   end
 
-  def edge_connector(%{candidates: []} = acc) do
-    acc
-  end
-
   def trace_edges(routed) when is_list(routed) do
     Enum.reduce(
       tl(routed),

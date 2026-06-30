@@ -17,6 +17,13 @@ defmodule IdenticonSvg do
   """
   @moduledoc since: "0.1.0"
 
+  defguardp valid_generate_args?(text, size, bg_color, opacity, padding)
+            when is_binary(text) and size in 4..10 and
+                   (is_binary(bg_color) or is_nil(bg_color) or
+                      bg_color in [:basic, :split1, :split2]) and
+                   is_number(opacity) and opacity >= 0 and opacity <= 1 and
+                   is_integer(padding) and padding >= 0
+
   @doc """
   Generate the SVG code of the identicon for the specified `text`.
 
@@ -126,10 +133,7 @@ defmodule IdenticonSvg do
         padding \\ 0,
         opts \\ [squircle_curvature: nil]
       )
-    when is_binary(text) and size in 4..10 and
-           (is_binary(bg_color) or is_nil(bg_color) or bg_color in [:basic, :split1, :split2]) and
-           is_number(opacity) and opacity >= 0 and opacity <= 1 and is_integer(padding) and
-           padding >= 0 do
+    when valid_generate_args?(text, size, bg_color, opacity, padding) do
     %Identicon{
       text: text,
       size: size,
@@ -165,7 +169,7 @@ defmodule IdenticonSvg do
         opts
       ) do
     squircle_curvature = Keyword.get(opts, :squircle_curvature)
-    only_group? = !is_nil(squircle_curvature) and is_number(squircle_curvature)
+    only_group? = is_number(squircle_curvature)
 
     svg =
       Draw.svg(paths, size, padding, fg_color, bg_color, opacity,
@@ -264,41 +268,13 @@ defmodule IdenticonSvg do
   end
 
   def extract_foreground_squares(%Identicon{grid: grid} = input) do
-    presence =
-      grid
-      |> Stream.map(fn x -> 1 - rem(x, 2) end)
-      |> Stream.with_index()
-      |> Stream.map(&Tuple.to_list/1)
-      |> Stream.map(&Enum.reverse/1)
-      |> Stream.map(&List.to_tuple/1)
-      |> Map.new()
-
-    fg =
-      presence
-      |> Enum.filter(fn {_k, v} -> v == 1 end)
-      |> Map.new()
-      |> Map.keys()
-
-    input
-    |> Map.put(
-      :squares,
-      fg
-    )
-  end
-
-  def keys_by_value(m, value) when is_map(m) do
-    m
-    |> Enum.filter(fn {_k, v} -> v == value end)
-    |> Map.new()
-    |> Map.keys()
-  end
-
-  def generate_coordinates(%Identicon{grid: grid} = input) do
-    grid =
+    squares =
       grid
       |> Enum.with_index()
+      |> Enum.filter(fn {x, _i} -> rem(x, 2) == 0 end)
+      |> Enum.map(fn {_x, i} -> i end)
 
-    %{input | grid: grid}
+    %{input | squares: squares}
   end
 
   defp mirror_row(row, odd) when odd in 0..1 do
