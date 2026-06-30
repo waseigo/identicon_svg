@@ -98,6 +98,18 @@ xychart-beta
 Each group of three bars shows the **minimum**, **average**, and **maximum**
 measured time for that size, from left to right.
 
+## Support
+
+If this library saves you time or helps your project, consider saying thanks by purchasing a copy of [**Northwind Elixir Traders**](https://leanpub.com/northwind-elixir-traders), an exploratory-learning book that teaches Elixir, Ecto, and SQLite all in one hands-on project, with its [source code](https://github.com/waseigo/northwind_elixir_traders) released under the Apache-2.0 License.
+
+<a href="https://leanpub.com/northwind-elixir-traders">
+  <img src="https://raw.githubusercontent.com/waseigo/northwind_elixir_traders/main/etc/northwind-elixir-traders-cover.jpg"
+       width="200"
+       alt="Northwind Elixir Traders cover">
+</a>
+
+See what readers are saying on the [book's ElixirForum thread](https://elixirforum.com/t/northwind-elixir-traders-pragprog/70887).
+
 ## Documentation
 
 The docs can be found at <https://hexdocs.pm/identicon_svg>.
