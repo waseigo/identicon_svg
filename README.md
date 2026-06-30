@@ -80,6 +80,11 @@ squircle. This requires the `squircle` dependency.
 
 No configuration required.
 
+## Development
+
+Run `mix profile` to benchmark identicon generation performance across
+sizes and options.
+
 ## Documentation
 
 The docs can be found at <https://hexdocs.pm/identicon_svg>.
