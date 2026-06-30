@@ -180,7 +180,7 @@ defmodule IdenticonSvg.Draw do
     ]
   end
 
-  defp mnmx(values) when is_list(values) do
-    {Enum.min(values), Enum.max(values)}
+  defp mnmx([h | t]) do
+    Enum.reduce(t, {h, h}, fn v, {mn, mx} -> {min(v, mn), max(v, mx)} end)
   end
 end
