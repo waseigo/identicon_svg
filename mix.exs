@@ -50,7 +50,7 @@ defmodule IdenticonSvg.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:squircle, "~> 1.0", path: "../squircle"},
+      {:squircle, "~> 1.0"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.3",
        only: :dev, runtime: false, warn_if_outdated: true},
