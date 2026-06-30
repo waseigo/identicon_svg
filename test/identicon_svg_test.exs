@@ -2,7 +2,11 @@ defmodule IdenticonSvgTest do
   use ExUnit.Case
   doctest IdenticonSvg
 
-  test "greets the world" do
-    assert IdenticonSvg.hello() == :world
+  describe "svg version" do
+    test "outputs version 1.1" do
+      svg = IdenticonSvg.generate("banana")
+      assert svg =~ ~s{version="1.1"}
+      refute svg =~ ~s{version="1.2"}
+    end
   end
 end
