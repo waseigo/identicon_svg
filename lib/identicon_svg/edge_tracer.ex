@@ -168,7 +168,7 @@ defmodule IdenticonSvg.EdgeTracer do
     acc0 = %{routed: [], candidates: s}
 
     Enum.reduce_while(
-      0..length(Map.keys(s)),
+      0..map_size(s),
       acc0,
       fn _iteration, acc ->
         %{candidates: candidates} = acc
