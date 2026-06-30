@@ -85,6 +85,14 @@ No configuration required.
 Run `mix profile` to benchmark identicon generation performance across
 sizes and options.
 
+```mermaid
+xychart-beta
+  title "Identicon generation time (μs) — lower is better"
+  x-axis ["size=4", "size=5", "size=7", "size=10"]
+  y-axis "Microseconds" 0 --> 1400
+  bar [214, 205, 747, 1256]
+```
+
 ## Documentation
 
 The docs can be found at <https://hexdocs.pm/identicon_svg>.
