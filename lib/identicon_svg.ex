@@ -126,8 +126,8 @@ defmodule IdenticonSvg do
         padding \\ 0,
         opts \\ [squircle_curvature: nil]
       )
-      when is_bitstring(text) and size in 4..10 and
-             (is_bitstring(bg_color) or is_nil(bg_color) or is_atom(bg_color)) and
+      when is_binary(text) and size in 4..10 and
+             (is_binary(bg_color) or is_nil(bg_color) or is_atom(bg_color)) and
              is_float(opacity) and is_integer(padding) and padding >= 0 do
     %Identicon{
       text: text,
@@ -148,7 +148,7 @@ defmodule IdenticonSvg do
     |> return_svg()
   end
 
-  def return_svg(%Identicon{svg: svg}) when is_bitstring(svg) do
+  def return_svg(%Identicon{svg: svg}) when is_binary(svg) do
     svg
   end
 
@@ -310,7 +310,7 @@ defmodule IdenticonSvg do
   end
 
   defp determine_background_color(fg_color, bg_color)
-       when is_bitstring(fg_color) and is_atom(bg_color) and
+       when is_binary(fg_color) and is_atom(bg_color) and
               bg_color in [:basic, :split1, :split2] do
     fg_color
     |> Color.hex_to_rgb()
@@ -319,11 +319,7 @@ defmodule IdenticonSvg do
   end
 
   defp determine_background_color(_fg_color, bg_color)
-       when is_bitstring(bg_color) or is_nil(bg_color) do
+       when is_binary(bg_color) or is_nil(bg_color) do
     bg_color
-  end
-
-  defp determine_background_color(_fg_color, bg_color) when is_nil(bg_color) do
-    nil
   end
 end
