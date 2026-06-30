@@ -132,7 +132,7 @@ defmodule IdenticonSvg.Draw do
   defp gen_random_string(len \\ 10) when is_integer(len) and len > 0 do
     for _ <- 1..len,
         into: "",
-        do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz')>>
+        do: <<Enum.random(~c"0123456789abcdefghijklmnopqrstuvwxyz")>>
   end
 
   # Convert a path (of the `%Identicon{}` struct's `:paths` field) to a path fragment that ends up being part of the `d` attribute of an SVG `<path>`.
@@ -154,7 +154,7 @@ defmodule IdenticonSvg.Draw do
     |> Enum.zip(s)
     |> Enum.map(&Tuple.to_list/1)
     |> List.flatten()
-    |> to_string
+    |> to_string()
   end
 
   # Convert a path (of the `%Identicon{}` struct's `:paths` field) to a rectangle defined by its reference corner coordinates (`x` and `y`) and its horizontal and vertical span (`h` and `v`).

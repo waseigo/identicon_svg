@@ -19,7 +19,7 @@ defmodule IdenticonSvg.Color do
   Convert a hexadecimal color string with 3 or 6 characters, with or without a `#` prefix, to
   a list of integers representing the red, green, and blue components of a color as integers in the range 0..255
   """
-  def hex_to_rgb(hex) when is_bitstring(hex) and byte_size(hex) in [4, 7] do
+  def hex_to_rgb(hex) when is_binary(hex) and byte_size(hex) in [4, 7] do
     <<r, g, b>> =
       hex
       |> String.trim_leading("#")
@@ -46,7 +46,7 @@ defmodule IdenticonSvg.Color do
   a hexadecimal color string with 6 uppercase characters. If the input hex color has 6 characters,
   return it untouched. Otherwise, raise an `ArgumentError`.
   """
-  def hex_to_hex6(hex) when is_bitstring(hex) do
+  def hex_to_hex6(hex) when is_binary(hex) do
     case byte_size(String.trim_leading(hex, "#")) do
       3 ->
         hex
