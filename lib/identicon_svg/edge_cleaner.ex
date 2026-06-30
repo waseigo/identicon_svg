@@ -43,9 +43,8 @@ defmodule IdenticonSvg.EdgeCleaner do
     edges
     |> Enum.map(&MapSet.new/1)
     |> Enum.frequencies()
-    |> Map.filter(fn {_k, v} -> v == 1 end)
-    |> Map.keys()
-    |> Enum.map(&MapSet.to_list/1)
+    |> Enum.filter(fn {_k, v} -> v == 1 end)
+    |> Enum.map(fn {k, _v} -> MapSet.to_list(k) end)
     |> Enum.sort()
   end
 end
