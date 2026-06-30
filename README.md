@@ -87,11 +87,16 @@ sizes and options.
 
 ```mermaid
 xychart-beta
-  title "Identicon generation time (μs) — lower is better"
+  title "Identicon generation time (μs) — min / avg / max"
   x-axis ["size=4", "size=5", "size=7", "size=10"]
-  y-axis "Microseconds" 0 --> 1400
+  y-axis "Microseconds" 0 --> 5200
+  bar [176, 178, 498, 979]
   bar [214, 205, 747, 1256]
+  bar [363, 364, 5036, 2169]
 ```
+
+Each group of three bars shows the **minimum**, **average**, and **maximum**
+measured time for that size, from left to right.
 
 ## Documentation
 
