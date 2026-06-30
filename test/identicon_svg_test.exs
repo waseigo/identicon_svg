@@ -59,4 +59,53 @@ defmodule IdenticonSvgTest do
       end
     end
   end
+
+  describe "identicon output structure" do
+    test "returns valid SVG document" do
+      svg = IdenticonSvg.generate("banana")
+      assert String.starts_with?(svg, "<svg")
+      assert String.ends_with?(svg, "</svg>")
+    end
+
+    test "no defs when bg_color is nil" do
+      svg = IdenticonSvg.generate("banana")
+      refute svg =~ ~r{<defs>}
+    end
+
+    test "defs mask present when bg_color is set" do
+      svg = IdenticonSvg.generate("banana", 5, :basic)
+      assert svg =~ ~r{<defs><mask}
+    end
+
+    test "viewbox matches size 5" do
+      svg = IdenticonSvg.generate("banana", 5)
+      assert svg =~ ~s{viewBox="0 0 5 5"}
+    end
+
+    test "viewbox matches size 4" do
+      svg = IdenticonSvg.generate("banana", 4)
+      assert svg =~ ~s{viewBox="0 0 4 4"}
+    end
+
+    test "viewbox includes padding" do
+      svg = IdenticonSvg.generate("banana", 5, nil, 1.0, 2)
+      assert svg =~ ~s{viewBox="-2 -2 9 9"}
+    end
+
+    test "deterministic output" do
+      assert IdenticonSvg.generate("banana") == IdenticonSvg.generate("banana")
+    end
+
+    test "different texts produce different identicons" do
+      refute IdenticonSvg.generate("banana") == IdenticonSvg.generate("apple")
+    end
+
+    test "squircle with curvature produces valid SVG" do
+      svg = IdenticonSvg.generate("banana", 5, nil, 1.0, 2, squircle_curvature: 0.8)
+      assert String.starts_with?(svg, "<svg")
+      assert String.ends_with?(svg, "</svg>")
+      assert svg =~ ~r{<pattern}
+      assert svg =~ ~r{<path d=}
+    end
+  end
 end
