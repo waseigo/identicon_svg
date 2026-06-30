@@ -33,7 +33,7 @@ defmodule IdenticonSvg.MixProject do
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README*", "LICENSE*"],
+      files: ["lib/identicon_svg", "lib/identicon_svg.ex", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Isaak Tsalicoglou"],
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/waseigo/identicon_svg"}
