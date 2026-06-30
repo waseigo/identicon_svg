@@ -55,7 +55,7 @@ defmodule IdenticonSvgTest do
 
     test "rejects invalid atom" do
       assert_raise FunctionClauseError, fn ->
-        IdenticonSvg.generate("test", 5, :invalid_atom)
+        apply(IdenticonSvg, :generate, ["test", 5, :invalid_atom])
       end
     end
   end
