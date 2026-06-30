@@ -4,7 +4,7 @@ defmodule IdenticonSvg.MixProject do
   def project do
     [
       app: :identicon_svg,
-      version: "0.9.5",
+      version: "1.0.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -50,7 +50,7 @@ defmodule IdenticonSvg.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:squircle, "~> 0.1.1"},
+      {:squircle, "~> 1.0", path: "../squircle"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.3",
        only: :dev, runtime: false, warn_if_outdated: true},

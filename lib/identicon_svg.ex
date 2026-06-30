@@ -13,7 +13,23 @@ defmodule IdenticonSvg do
   }
 
   @moduledoc """
-  Main module of `IdenticonSvg` that contains all functions of the library.
+  Generate GitHub-style identicons as complete SVG documents.
+
+  The central entry point is `generate/6`. It hashes the input `text`,
+  derives a grid and foreground color from the hash, mirrors the grid
+  for symmetry, merges neighboring foreground squares into polygons,
+  traces their edges, and composes the final SVG string.
+
+  ## Quick-start
+
+      iex> svg = IdenticonSvg.generate("banana")
+      iex> String.starts_with?(svg, "<svg")
+      true
+      iex> String.ends_with?(svg, "</svg>")
+      true
+
+  See `generate/6` for all available options (size, background color,
+  opacity, padding, and squircle cropping).
   """
   @moduledoc since: "0.1.0"
 
@@ -36,11 +52,35 @@ defmodule IdenticonSvg do
   * RIPEMD-160 for 6, and
   * SHA3 for 7 to 10 with 224, 256, 384 and 512 bits, respectively.
 
+  ## Doctests
+
+      iex> svg = IdenticonSvg.generate("banana")
+      iex> String.starts_with?(svg, "<svg")
+      true
+      iex> String.ends_with?(svg, "</svg>")
+      true
+      iex> String.contains?(svg, ~s(version="1.1"))
+      true
+
+  The output is deterministic — the same text always produces the same identicon:
+
+      iex> IdenticonSvg.generate("banana") == IdenticonSvg.generate("banana")
+      true
+
+  Different texts produce different identicons:
+
+      iex> IdenticonSvg.generate("banana") != IdenticonSvg.generate("apple")
+      true
+
+  ## Arguments
+
   Optionally, specify any combination of the following arguments:
 
   * `size`: the number of grid squares of the identicon's side; integer, 4 to 10; 5 by default.
-  * `bg_color`: the color of the background grid squares as a hex code string (e.g., `#eee`) _or_ an atom specifying the color complementarity (se below); `nil` by default.
-  * `opacity`: the opacity of the entire identicon (all grid squares); float, 0.0 to 1.0; 1.0 by default.
+  * `bg_color`: the color of the background grid squares as a hex code string (e.g., `#eee`)
+    _or_ an atom specifying the color complementarity (see below); `nil` by default.
+  * `opacity`: the opacity of the entire identicon (all grid squares); float, 0.0 to 1.0;
+    1.0 by default.
 
   The color of the foreground grid squares is always equal to the three first bytes of the
   hash of `text`, regardless of which hashing function is used automatically.
@@ -48,14 +88,27 @@ defmodule IdenticonSvg do
   Setting `bg_color` to `nil` (default value) generates only the foreground (colored) squares,
   with the default (1.0) or requested `opacity`.
 
-  _New since v0.9.0:_ Setting `padding` to a positive integer sets the padding to the identicon to that value. If `bg_color` is non-nil, it will also be applied to the padding area with the with the default (1.0) or requested `opacity`, which is applied the same on the foreground and the background. The file size is greatly reduced. Set the squircle curvature factor with the `:squircle_curvature` keyword option to a float to crop the identicon to a squircle.
+  Setting `padding` to a positive integer adds padding around the identicon. If `bg_color` is
+  non-nil, the padding area inherits the background color at the requested `opacity`. The
+  resulting SVG file size is greatly reduced compared to generating a larger grid.
 
-  _New since v0.8.0:_ Setting `bg_color` to one of the following 3 atom values sets the color of the background squares to the corresponding RGB-complementary color of the automatically-defined foreground color, with the default (1.0) or requested `opacity`:
-  * `:basic`: the complementary color, i.e. the opposite color of `fg_color` on the color wheel.
-  * `:split1`: the first adjacent tertiary color of the complement of `fg_color` on the color wheel.
-  * `:split2`: the second adjacent tertiary color of the complement of `fg_color` on the color wheel.
+  The `:squircle_curvature` keyword option crops the identicon to a squircle. Pass a float
+  between 0.0 (sharp corners) and 1.0 (circle). Requires the `squircle` dependency.
 
-  ## Examples
+  ### Background complementarity
+
+  Setting `bg_color` to one of the following atom values sets the color of the background
+  squares to the corresponding RGB-complementary color of the automatically-defined foreground
+  color:
+
+  * `:basic` — the complementary color, i.e. the opposite color of `fg_color` on the color
+    wheel.
+  * `:split1` — the first adjacent tertiary color of the complement of `fg_color` on the
+    color wheel.
+  * `:split2` — the second adjacent tertiary color of the complement of `fg_color` on the
+    color wheel.
+
+  ## Gallery
 
   5x5 identicon with transparent background:
   ```elixir
@@ -153,11 +206,11 @@ defmodule IdenticonSvg do
     |> return_svg()
   end
 
-  def return_svg(%Identicon{svg: svg}) when is_binary(svg) do
+  defp return_svg(%Identicon{svg: svg}) when is_binary(svg) do
     svg
   end
 
-  def generate_svg(
+  defp generate_svg(
         %Identicon{
           paths: paths,
           size: size,
@@ -180,7 +233,7 @@ defmodule IdenticonSvg do
     %{input | svg: svg}
   end
 
-  def trace_polygon_edges_to_paths(%Identicon{edges: edges} = input) do
+  defp trace_polygon_edges_to_paths(%Identicon{edges: edges} = input) do
     paths =
       edges
       |> EdgeTracer.doit()
@@ -189,7 +242,7 @@ defmodule IdenticonSvg do
     %{input | paths: paths}
   end
 
-  def convert_polygons_into_edgelists(
+  defp convert_polygons_into_edgelists(
         %Identicon{polygons: polygons, size: size} = input
       ) do
     edges =
@@ -199,7 +252,7 @@ defmodule IdenticonSvg do
     %{input | edges: edges}
   end
 
-  def find_neighboring_squares(%Identicon{squares: squares, size: size} = input) do
+  defp find_neighboring_squares(%Identicon{squares: squares, size: size} = input) do
     neighbors =
       squares
       |> PolygonReducer.neighbors_per_index(size)
@@ -207,7 +260,7 @@ defmodule IdenticonSvg do
     %{input | neighbors: neighbors}
   end
 
-  def group_neighbors_into_polygons(%Identicon{neighbors: neighbors} = input) do
+  defp group_neighbors_into_polygons(%Identicon{neighbors: neighbors} = input) do
     polygons = PolygonReducer.group(neighbors)
 
     %{input | polygons: polygons}
@@ -227,7 +280,7 @@ defmodule IdenticonSvg do
     hashes[size]
   end
 
-  def hash_input(%Identicon{text: text, size: size} = input) do
+  defp hash_input(%Identicon{text: text, size: size} = input) do
     grid =
       appropriate_hash(size)
       |> :crypto.hash(text)
@@ -236,7 +289,7 @@ defmodule IdenticonSvg do
     %{input | grid: grid}
   end
 
-  def extract_colors(%Identicon{grid: grid, bg_color: bg_color} = input) do
+  defp extract_colors(%Identicon{grid: grid, bg_color: bg_color} = input) do
     fg_color =
       grid
       |> Enum.chunk_every(3)
@@ -253,7 +306,7 @@ defmodule IdenticonSvg do
     |> Map.put(:bg_color, bg_color)
   end
 
-  def square_grid(%Identicon{grid: grid, size: size} = input) do
+  defp square_grid(%Identicon{grid: grid, size: size} = input) do
     odd = rem(size, 2)
     chunks = Integer.floor_div(size, 2) + odd
 
@@ -266,7 +319,7 @@ defmodule IdenticonSvg do
     %{input | grid: grid}
   end
 
-  def extract_foreground_squares(%Identicon{grid: grid} = input) do
+  defp extract_foreground_squares(%Identicon{grid: grid} = input) do
     squares =
       grid
       |> Enum.with_index()

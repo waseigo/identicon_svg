@@ -24,3 +24,6 @@ identicon_svg-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# OpenCode session metadata
+/.omo/

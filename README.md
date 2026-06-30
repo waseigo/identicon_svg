@@ -2,48 +2,79 @@
 
 # IdenticonSvg
 
-An Elixir library to generate identicons in SVG format, so they can be inlined in HTML.
+An [Elixir](https://elixir-lang.org/) library to generate identicons in SVG
+format that can be inlined in HTML.
 
 [Demo](https://obidenticon.overbring.com/)
 
-## Features
-
-- Github-style square identicon sizes from 4x4 to 10x10. The hashing function is automatically chosen based on the requested size. The foreground color choice is automatic based on the hash.
-- Optional (integer) padding.
-- Optional background color, manually defined or automatically set as basic or split complementary.
-- Transparent background (also on the padding) if no background color specified.
-- Optionally non-100% opacity.
-- Small SVG file size makes it great for inlining in HTML.
-- No external dependencies.
-
 ## Installation
 
-The package is [available in Hex](https://hex.pm/packages/identicon_svg) and can be installed by adding `identicon_svg` to your list of dependencies in `mix.exs`:
+Add `identicon_svg` to your dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:identicon_svg, "~> 0.9.4"}
+    {:identicon_svg, "~> 1.0"}
   ]
 end
 ```
 
-## Recent changes
+## Usage
 
-### New since v0.9.0
+### Basic identicon
 
-- _(Since v0.9.4)_ Set the squircle curvature factor with the `:squircle_curvature` keyword option to a float to crop the identicon to a squircle.
-- _(Since v0.9.3)_ The mask id is now randomly generated to avoid clashes between multiple SVG identicons on the same page.
-- Setting `padding` to a positive integer sets the padding to the identicon to that value. If `bg_color` is non-nil, it will also be applied to the padding area with the with the default (1.0) or requested `opacity`, which is also applied on the foreground and the background.
-- The size of the generated SVG code is greatly reduced.
+```elixir
+IdenticonSvg.generate("banana")
+```
 
-### New since v0.8.0
+Returns a complete SVG document for a 5×5 identicon with a transparent
+background.
 
-Setting `bg_color` to one of the following 3 atom values sets the color of the background squares to the corresponding RGB-complementary color of the automatically-defined foreground color, with the default (1.0) or requested `opacity`:
+### Custom size
 
-- `:basic`: the complementary color, i.e. the opposite color of `fg_color` on the color wheel.
-- `:split1`: the first adjacent tertiary color of the complement of `fg_color` on the color wheel.
-- `:split2`: the second adjacent tertiary color of the complement of `fg_color` on the color wheel.
+```elixir
+IdenticonSvg.generate("overbring.com", 7)
+```
+
+Sizes from 4 to 10 are supported. The hashing function (MD5, RIPEMD-160,
+SHA3) is chosen automatically based on the size.
+
+### Background color
+
+```elixir
+# Hex color
+IdenticonSvg.generate("refrigerator", 7, "#33f")
+
+# Complementary (automatically derived from foreground color)
+IdenticonSvg.generate("banana", 5, :basic)
+IdenticonSvg.generate("banana", 5, :split1)
+IdenticonSvg.generate("banana", 5, :split2)
+```
+
+### Opacity
+
+```elixir
+IdenticonSvg.generate("2023-03-14", 9, nil, 0.5)
+```
+
+### Padding
+
+```elixir
+IdenticonSvg.generate("banana", 5, nil, 1.0, 2)
+```
+
+Padding adds space around the identicon. When combined with a background
+color, the padding inherits the background.
+
+### Squircle cropping
+
+```elixir
+IdenticonSvg.generate("banana", 5, nil, 1.0, 2,
+  squircle_curvature: 0.8)
+```
+
+The `:squircle_curvature` option (0.0–1.0) crops the identicon to a
+squircle. This requires the `squircle` dependency.
 
 ## Configuration
 
@@ -54,19 +85,3 @@ No configuration required.
 The docs can be found at <https://hexdocs.pm/identicon_svg>.
 
 There's also a [discussion thread on elixirforum.com](https://elixirforum.com/t/identiconsvg-generates-identicons-in-svg-format-so-they-can-be-inlined-in-html/54557/1).
-
-## TODO (maybe, one day)
-
-- [x] Implement core functionality
-- [x] Publish on hex.pm
-- [x] Add background color functionality (split-complementary for automatic color-matching)
-- [x] Add padding
-- [x] Reduce generated SVG file size
-- [ ] Implement testing functions
-- [ ] Set up CI
-
-## Donate
-
-Has this library been useful for your project? 
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V119L07A)
