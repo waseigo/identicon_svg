@@ -127,7 +127,7 @@ defmodule IdenticonSvg do
         opts \\ [squircle_curvature: nil]
       )
     when is_binary(text) and size in 4..10 and
-           (is_binary(bg_color) or is_nil(bg_color) or is_atom(bg_color)) and
+           (is_binary(bg_color) or is_nil(bg_color) or bg_color in [:basic, :split1, :split2]) and
            is_number(opacity) and opacity >= 0 and opacity <= 1 and is_integer(padding) and
            padding >= 0 do
     %Identicon{

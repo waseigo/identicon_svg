@@ -31,4 +31,32 @@ defmodule IdenticonSvgTest do
       end
     end
   end
+
+  describe "bg_color guard" do
+    test "accepts :basic" do
+      assert is_binary(IdenticonSvg.generate("test", 5, :basic))
+    end
+
+    test "accepts :split1" do
+      assert is_binary(IdenticonSvg.generate("test", 5, :split1))
+    end
+
+    test "accepts :split2" do
+      assert is_binary(IdenticonSvg.generate("test", 5, :split2))
+    end
+
+    test "accepts nil background" do
+      assert is_binary(IdenticonSvg.generate("test", 5, nil))
+    end
+
+    test "accepts hex string background" do
+      assert is_binary(IdenticonSvg.generate("test", 5, "#f00"))
+    end
+
+    test "rejects invalid atom" do
+      assert_raise FunctionClauseError, fn ->
+        IdenticonSvg.generate("test", 5, :invalid_atom)
+      end
+    end
+  end
 end
